@@ -628,7 +628,7 @@ async function fetchLiveScores() {
         'Uzbekistan': 'Uzbekistán', 'Panama': 'Panamá',
         'Portugal': 'Portugal', 'Congo DR': 'Congo DR',
         'England': 'Inglaterra', 'Croatia': 'Croacia',
-        'Ghana': 'Ghana', 'Panama': 'Panamá',
+        'Ghana': 'Ghana',
         'Morocco': 'Marruecos', 'Colombia': 'Colombia',
         'Brazil': 'Brasil', 'Türkiye': 'Turquía',
         'Scotland': 'Escocia',
