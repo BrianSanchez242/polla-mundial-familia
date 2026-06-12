@@ -954,6 +954,7 @@ async function init() {
     renderMatches();
     renderMyPredictions();
     renderResults();
+    renderGroups();
     updateLeaderboard();
     updateStats();
     initSpecialPredictions();
@@ -1384,6 +1385,81 @@ function calculatePoints(predictions, results) {
     });
 
     return { points, exact, tendency };
+}
+
+// Tabla de grupos — calculada automáticamente desde results
+function renderGroups() {
+    const container = document.getElementById('groups-grid');
+    if (!container) return;
+
+    const groupLetters = [...new Set(defaultMatches.map(m => m.group))].sort();
+
+    const formaBadge = f => {
+        const s = f === 'G' ? 'background:#00FF88;color:#000'
+                : f === 'E' ? 'background:#FFD700;color:#000'
+                :             'background:#FF4444;color:#fff';
+        return `<span style="${s};border-radius:4px;padding:1px 6px;font-weight:700;font-size:0.8rem;">${f}</span>`;
+    };
+
+    container.innerHTML = groupLetters.map(letter => {
+        const groupMatches = defaultMatches.filter(m => m.group === letter);
+        const teamNames = [...new Set(groupMatches.flatMap(m => [m.team1, m.team2]))];
+
+        const stats = {};
+        teamNames.forEach(t => { stats[t] = { pj:0, g:0, e:0, p:0, gf:0, gc:0, forma:[] }; });
+
+        groupMatches.forEach(match => {
+            const r = results.find(r => r.matchId === match.id);
+            if (!r) return;
+            const { score1, score2 } = r;
+            const t1 = match.team1, t2 = match.team2;
+            stats[t1].pj++; stats[t1].gf += score1; stats[t1].gc += score2;
+            stats[t2].pj++; stats[t2].gf += score2; stats[t2].gc += score1;
+            if (score1 > score2) {
+                stats[t1].g++; stats[t1].forma.push('G');
+                stats[t2].p++; stats[t2].forma.push('P');
+            } else if (score1 < score2) {
+                stats[t2].g++; stats[t2].forma.push('G');
+                stats[t1].p++; stats[t1].forma.push('P');
+            } else {
+                stats[t1].e++; stats[t1].forma.push('E');
+                stats[t2].e++; stats[t2].forma.push('E');
+            }
+        });
+
+        const sorted = teamNames.map(t => {
+            const s = stats[t];
+            return { team: t, flag: t.split(' ')[0], name: stripFlag(t), ...s,
+                     dg: s.gf - s.gc, pts: s.g * 3 + s.e };
+        }).sort((a, b) => b.pts - a.pts || b.dg - a.dg || b.gf - a.gf);
+
+        const rows = sorted.map((t, i) => {
+            const formaHtml = [...t.forma.map(formaBadge), ...Array(3 - t.pj).fill('-')].join(' ');
+            const dg = t.dg > 0 ? `+${t.dg}` : `${t.dg}`;
+            return `<tr>
+                <td><div class="team-name-cell">
+                    <span class="team-position">${i+1}</span>
+                    <span class="team-flag">${t.flag}</span>
+                    <span>${t.name}</span>
+                </div></td>
+                <td>${t.pj}</td><td>${t.g}</td><td>${t.e}</td><td>${t.p}</td>
+                <td>${t.gf}</td><td>${t.gc}</td><td>${dg}</td>
+                <td class="pts-cell">${t.pts}</td>
+                <td class="results-cell">${formaHtml}</td>
+            </tr>`;
+        }).join('');
+
+        return `<div class="group-table-container">
+            <div class="group-table-header">Grupo ${letter}</div>
+            <table class="group-standings-table">
+                <thead><tr>
+                    <th></th><th>PJ</th><th>G</th><th>E</th><th>P</th>
+                    <th>GF</th><th>GC</th><th>DG</th><th>Pts</th><th>RESULTADOS</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+    }).join('');
 }
 
 // Actualizar tabla de posiciones
