@@ -1071,7 +1071,8 @@ function renderMatches() {
     }
 
     document.getElementById('pendingBanner')?.remove();
-    if (me) {
+    {
+        const myPredictions = me?.predictions || [];
         const now = new Date();
         const nowPE = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
         const tomorrowPE = new Date(nowPE); tomorrowPE.setDate(tomorrowPE.getDate() + 1);
@@ -1089,13 +1090,13 @@ function renderMatches() {
             .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
         if (upcomingMatches.length > 0) {
-            const unpredicted = upcomingMatches.filter(m => !me.predictions.find(p => p.matchId === m.id));
+            const unpredicted = upcomingMatches.filter(m => !myPredictions.find(p => p.matchId === m.id));
             const capB = s => s.charAt(0).toUpperCase() + s.slice(1);
             const todayLabelB = capB(nowPE.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Lima' }));
             const tomorrowLabelB = capB(tomorrowPE.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Lima' }));
             let lastDayBanner = null;
             const items = upcomingMatches.map(m => {
-                const hasPick = !!me.predictions.find(p => p.matchId === m.id);
+                const hasPick = !!myPredictions.find(p => p.matchId === m.id);
                 const mPE = new Date(new Date(m.dateTime).toLocaleString('en-US', { timeZone: 'America/Lima' }));
                 const mDayStr = toDS(mPE);
                 const isToday = mDayStr === todayStr;
