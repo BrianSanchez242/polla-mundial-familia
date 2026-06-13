@@ -981,10 +981,12 @@ function renderMyPredictions() {
         return;
     }
 
-    const saved = new Date(me.timestamp).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' });
+    const fmtDateTime = ts => new Date(ts).toLocaleString('es-PE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima' });
+    const registeredAt = me.createdAt ? fmtDateTime(me.createdAt) : fmtDateTime(me.timestamp);
+    const updatedAt = me.timestamp && me.createdAt && me.timestamp !== me.createdAt ? ` · Actualizado: ${fmtDateTime(me.timestamp)}` : '';
     const myStats = calculatePoints(me.predictions, results);
     const pointsText = myStats.points > 0 ? ` · 🏆 ${myStats.points} pts (${myStats.exact} exactos, ${myStats.tendency} tendencias)` : '';
-    subtitle.textContent = `Registradas el ${saved} · No se pueden modificar${pointsText}`;
+    subtitle.textContent = `Registrado: ${registeredAt}${updatedAt}${pointsText}`;
 
     // Agrupar predicciones por grupo
     const grouped = {};
@@ -1038,6 +1040,7 @@ function renderMyPredictions() {
 
             html += `
                 <div class="pick-card">
+                    <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px;">${formatPETime(match.dateTime)}</div>
                     <div class="pick-card-teams">
                         <span class="pick-team pick-team-left">${match.team1}</span>
                         ${scoreBlock}
@@ -1312,10 +1315,23 @@ async function submitPredictions() {
         username: sessionStorage.getItem('pollaUser'),
         predictions: mergedPredictions,
         specialPredictions: existingParticipant?.specialPredictions || {},
+        createdAt: existingParticipant?.createdAt || Date.now(),
         timestamp: Date.now()
     };
 
     await storage.set(`participant:${name}`, participant);
+
+    try {
+        await db().from('polla_saves').insert({
+            display_name: name,
+            username: sessionStorage.getItem('pollaUser'),
+            predictions: newPredictions,
+            match_count: newPredictions.length
+        });
+    } catch (e) {
+        console.warn('polla_saves insert error:', e);
+    }
+
     logAction(sessionStorage.getItem('pollaUser'), 'save_predictions', {
         display_name: name,
         count: newPredictions.length,
