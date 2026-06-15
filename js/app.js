@@ -727,13 +727,6 @@ function renderLiveBar() {
 
     if (todayMatches.length === 0) { bar.style.display = 'none'; return; }
 
-    const hasLive = todayMatches.some(m => {
-        const live = liveScores[`${stripFlag(m.team1)}|${stripFlag(m.team2)}`];
-        return live && (live.status === 'IN_PLAY' || live.status === 'PAUSED');
-    });
-
-    if (!hasLive) { bar.style.display = 'none'; return; }
-
     function teamLocal(full) {
         const name = stripFlag(full);
         const flag = full.slice(0, full.indexOf(name)).trim();
