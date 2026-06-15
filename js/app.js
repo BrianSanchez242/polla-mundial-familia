@@ -700,6 +700,7 @@ async function fetchLiveScores() {
         } else {
             renderMatches();
         }
+        renderLiveBar();
     } catch (e) { console.warn('ESPN live scores error:', e); renderMatches(); }
 }
 
@@ -711,6 +712,62 @@ function startLivePolling() {
 
 function stopLivePolling() {
     if (_livePollingInterval) { clearInterval(_livePollingInterval); _livePollingInterval = null; }
+}
+
+function renderLiveBar() {
+    const bar = document.getElementById('liveBar');
+    if (!bar) return;
+
+    const now = new Date();
+    const todayPE = now.toLocaleDateString('es-PE', { timeZone: 'America/Lima' });
+
+    const todayMatches = matches
+        .filter(m => new Date(m.dateTime).toLocaleDateString('es-PE', { timeZone: 'America/Lima' }) === todayPE)
+        .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+    if (todayMatches.length === 0) { bar.style.display = 'none'; return; }
+
+    const hasLive = todayMatches.some(m => {
+        const live = liveScores[`${stripFlag(m.team1)}|${stripFlag(m.team2)}`];
+        return live && (live.status === 'IN_PLAY' || live.status === 'PAUSED');
+    });
+
+    if (!hasLive) { bar.style.display = 'none'; return; }
+
+    function teamLocal(full) {
+        const name = stripFlag(full);
+        const flag = full.slice(0, full.indexOf(name)).trim();
+        return `${flag} ${name}`.trim();
+    }
+    function teamVisit(full) {
+        const name = stripFlag(full);
+        const flag = full.slice(0, full.indexOf(name)).trim();
+        return `${name} ${flag}`.trim();
+    }
+
+    const sep = `<span class="live-bar-sep"> | </span>`;
+    const items = todayMatches.map(m => {
+        const key = `${stripFlag(m.team1)}|${stripFlag(m.team2)}`;
+        const live = liveScores[key];
+        const result = results.find(r => r.matchId === m.id);
+        const t1 = teamLocal(m.team1);
+        const t2 = teamVisit(m.team2);
+
+        if (result) {
+            return `<span style="color:#00D9FF;">${t1} vs ${t2} · ${result.score1}-${result.score2} FINAL</span>`;
+        } else if (live && live.status === 'IN_PLAY') {
+            return `<span class="live-bar-label">🔴 En Vivo</span> ${t1} vs ${t2} · <span class="live-bar-label">⚽ ${live.home_score}-${live.away_score} · ${live.minute}</span>`;
+        } else if (live && live.status === 'PAUSED') {
+            return `⏸ <span class="live-bar-label">Descanso</span> ${t1} vs ${t2} · ⏸ ${live.home_score}-${live.away_score} · Descanso`;
+        } else {
+            const timePE = new Date(m.dateTime).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Lima' });
+            return `<span class="live-bar-dim">${t1} vs ${t2} · ${timePE}</span>`;
+        }
+    });
+
+    const content = items.join(sep);
+    bar.innerHTML = `<div class="live-bar-track"><div class="live-bar-copy">${content}</div><div class="live-bar-copy">${content}</div></div>`;
+    bar.style.display = 'block';
 }
 
 // Convierte un dateTime ISO a hora Peru (America/Lima)
@@ -1531,12 +1588,12 @@ function renderAllPicks() {
     try {
     const now = new Date();
     const eligible = matches
-        .filter(m => new Date(m.dateTime).getTime() + 2 * 60 * 1000 < now.getTime())
+        .filter(m => new Date(m.dateTime).getTime() < now.getTime())
         .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
 
     if (eligible.length === 0) {
         container.innerHTML = `<p style="color:var(--text-dim);text-align:center;padding:24px;font-size:0.9rem;">
-            Aún no hay partidos en curso. Los pronósticos se revelan al minuto 2 de cada partido.
+            Aún no hay partidos iniciados. Los pronósticos se revelan al inicio de cada partido.
         </p>`;
         return;
     }
