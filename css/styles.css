@@ -1391,9 +1391,6 @@ input:focus, select:focus {
     animation: liveBarScroll 40s linear infinite;
 }
 
-.live-bar-track:hover {
-    animation-play-state: paused;
-}
 
 .live-bar-copy {
     display: flex;
