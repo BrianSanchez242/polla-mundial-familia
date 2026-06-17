@@ -579,7 +579,7 @@ const defaultMatches = [
     { id: 60, group: 'J', team1: '🇩🇿 Algeria', team2: '🇦🇹 Austria', dateTime: '2026-06-27T21:00:00-05:00', venue: 'GEHA Field, Kansas City' },
 
     // GRUPO K — Portugal, Congo DR, Colombia, Uzbekistán
-    { id: 61, group: 'K', team1: '🇺🇿 Uzbekistán', team2: '🇨🇴 Colombia', dateTime: '2026-06-18T21:00:00-05:00', venue: 'Estadio Banorte, Ciudad de México' },
+    { id: 61, group: 'K', team1: '🇺🇿 Uzbekistán', team2: '🇨🇴 Colombia', dateTime: '2026-06-17T21:00:00-05:00', venue: 'Estadio Banorte, Ciudad de México' },
     { id: 62, group: 'K', team1: '🇵🇹 Portugal', team2: '🇨🇩 Congo DR', dateTime: '2026-06-17T12:00:00-05:00', venue: 'NRG Stadium, Houston' },
     { id: 63, group: 'K', team1: '🇨🇴 Colombia', team2: '🇨🇩 Congo DR', dateTime: '2026-06-23T21:00:00-05:00', venue: 'Estadio Akron, Guadalajara' },
     { id: 64, group: 'K', team1: '🇵🇹 Portugal', team2: '🇺🇿 Uzbekistán', dateTime: '2026-06-23T12:00:00-05:00', venue: 'NRG Stadium, Houston' },
