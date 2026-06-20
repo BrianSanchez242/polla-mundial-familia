@@ -1372,6 +1372,16 @@ async function submitPredictions() {
 
     await storage.set(`participant:${name}`, participant);
 
+    // Actualizar participants en memoria de inmediato (sin esperar init ni DB)
+    const idx = participants.findIndex(p => p.name === name);
+    if (idx >= 0) participants[idx] = participant;
+    else participants.push(participant);
+
+    showToast(`✅ ${newPredictions.length} predicción(es) guardadas`);
+    renderMatches();
+    renderMyPredictions();
+    updateLeaderboard();
+
     db().from('polla_saves').insert({
         display_name: name,
         username: sessionStorage.getItem('pollaUser'),
@@ -1384,11 +1394,6 @@ async function submitPredictions() {
         count: newPredictions.length,
         matches: newPredictions.map(p => ({ matchId: p.matchId, score: `${p.score1}-${p.score2}` }))
     });
-
-    showToast(`✅ ${newPredictions.length} predicción(es) guardadas para ${name}`);
-
-    // Recargar datos en background (no bloquea el UX)
-    init();
 }
 
 // Guardar resultados reales → una clave por partido en polla_data (result:matchId)
