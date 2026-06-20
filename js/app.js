@@ -1377,10 +1377,11 @@ async function submitPredictions() {
     if (idx >= 0) participants[idx] = participant;
     else participants.push(participant);
 
-    showToast(`✅ ${newPredictions.length} predicción(es) guardadas`);
     renderMatches();
     renderMyPredictions();
     updateLeaderboard();
+    updateStats();
+    showToast(`✅ ${newPredictions.length} predicción(es) guardadas`);
 
     db().from('polla_saves').insert({
         display_name: name,
