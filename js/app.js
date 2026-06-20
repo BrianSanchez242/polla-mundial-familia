@@ -493,6 +493,19 @@ const storage = {
             console.error('storage.list', prefix, e);
             return { keys: [] };
         }
+    },
+    getAll: async (prefix) => {
+        try {
+            const { data, error } = await db()
+                .from('polla_data')
+                .select('key,value')
+                .like('key', `${prefix}%`);
+            if (error) throw error;
+            return data ?? [];
+        } catch (e) {
+            console.error('storage.getAll', prefix, e);
+            return [];
+        }
     }
 };
 
@@ -962,19 +975,12 @@ async function init() {
         // Los partidos siempre vienen del código (no se guardan en BD)
         matches = defaultMatches;
 
-        // Cargar participantes
+        // Cargar participantes — una sola query
         try {
-            const listResult = await storage.list('participant:');
-            const keys = listResult ? listResult.keys : [];
-            const loaded = [];
-            for (const key of keys) {
-                const data = await storage.get(key);
-                if (data) loaded.push(data);
-            }
-            // Deduplicar por nombre y excluir al admin (no aparece en tabla/stats)
+            const rows = await storage.getAll('participant:');
             const seen = new Set();
-            participants = loaded.filter(p => {
-                if (p.username === 'admin') return false;
+            participants = rows.map(r => r.value).filter(p => {
+                if (!p || p.username === 'admin') return false;
                 if (seen.has(p.name)) return false;
                 seen.add(p.name);
                 return true;
@@ -986,16 +992,9 @@ async function init() {
         _initLock = false;
     }
 
-    // Cargar resultados — una clave por partido en polla_data (result:matchId)
-    // Este patrón evita que guardar un resultado borre a los demás
-    const resultList = await storage.list('result:');
-    results = [];
-    if (resultList && resultList.keys.length > 0) {
-        for (const key of resultList.keys) {
-            const r = await storage.get(key);
-            if (r && r.matchId && r.score1 !== null && r.score2 !== null) results.push(r);
-        }
-    }
+    // Cargar resultados — una sola query
+    const resultRows = await storage.getAll('result:');
+    results = resultRows.map(r => r.value).filter(v => v && v.matchId != null && v.score1 != null && v.score2 != null);
     // Fallback al array legacy si no hay claves individuales aún
     if (results.length === 0) {
         const savedResults = await storage.get('results');
@@ -1373,16 +1372,12 @@ async function submitPredictions() {
 
     await storage.set(`participant:${name}`, participant);
 
-    try {
-        await db().from('polla_saves').insert({
-            display_name: name,
-            username: sessionStorage.getItem('pollaUser'),
-            predictions: newPredictions,
-            match_count: newPredictions.length
-        });
-    } catch (e) {
-        console.warn('polla_saves insert error:', e);
-    }
+    db().from('polla_saves').insert({
+        display_name: name,
+        username: sessionStorage.getItem('pollaUser'),
+        predictions: newPredictions,
+        match_count: newPredictions.length
+    }).catch(e => console.warn('polla_saves insert error:', e));
 
     logAction(sessionStorage.getItem('pollaUser'), 'save_predictions', {
         display_name: name,
