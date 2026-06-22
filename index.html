@@ -315,29 +315,34 @@
 
                 <!-- Predicciones Especiales -->
                 <div class="special-predictions-container" id="specialPredictionsSection">
-                    <h3 class="section-subtitle">🏆 Predicciones Especiales</h3>
-                    <div id="specialDeadlineBanner"></div>
-                    <div class="special-predictions-grid">
-                        <div class="form-group">
-                            <label>🥇 Campeón del Mundial</label>
-                            <input type="text" id="predChampion" placeholder="¿Quién ganará el mundial?">
-                        </div>
-                        <div class="form-group">
-                            <label>🥈 Subcampeón</label>
-                            <input type="text" id="predRunnerUp" placeholder="¿Quién será segundo?">
-                        </div>
-                        <div class="form-group">
-                            <label>🥉 Tercer Puesto</label>
-                            <input type="text" id="predThirdPlace" placeholder="¿Quién quedará tercero?">
-                        </div>
-                        <div class="form-group">
-                            <label>⚽ Goleador del Torneo</label>
-                            <input type="text" id="predTopScorer" placeholder="Nombre del jugador">
-                        </div>
+                    <div class="special-toggle-header" onclick="toggleSpecialPredictions()" role="button" aria-expanded="false" aria-controls="specialPredictionsBody">
+                        <h3 class="section-subtitle" style="margin-bottom:0">🏆 Predicciones Especiales</h3>
+                        <span class="special-toggle-arrow" id="specialToggleArrow">▼</span>
                     </div>
-                    <button class="btn btn-special-save" id="saveSpecialBtn" onclick="saveSpecialPredictions()">
-                        🏆 Guardar Predicciones Especiales
-                    </button>
+                    <div class="special-predictions-body" id="specialPredictionsBody">
+                        <div id="specialDeadlineBanner"></div>
+                        <div class="special-predictions-grid">
+                            <div class="form-group">
+                                <label>🥇 Campeón del Mundial</label>
+                                <input type="text" id="predChampion" placeholder="¿Quién ganará el mundial?">
+                            </div>
+                            <div class="form-group">
+                                <label>🥈 Subcampeón</label>
+                                <input type="text" id="predRunnerUp" placeholder="¿Quién será segundo?">
+                            </div>
+                            <div class="form-group">
+                                <label>🥉 Tercer Puesto</label>
+                                <input type="text" id="predThirdPlace" placeholder="¿Quién quedará tercero?">
+                            </div>
+                            <div class="form-group">
+                                <label>⚽ Goleador del Torneo</label>
+                                <input type="text" id="predTopScorer" placeholder="Nombre del jugador">
+                            </div>
+                        </div>
+                        <button class="btn btn-special-save" id="saveSpecialBtn" onclick="saveSpecialPredictions()">
+                            🏆 Guardar Predicciones Especiales
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Partidos por Grupo -->

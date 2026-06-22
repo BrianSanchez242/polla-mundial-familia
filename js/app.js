@@ -836,6 +836,16 @@ function isSpecialDeadlinePassed() {
     return new Date() >= SPECIAL_DEADLINE;
 }
 
+function toggleSpecialPredictions() {
+    const body  = document.getElementById('specialPredictionsBody');
+    const arrow = document.getElementById('specialToggleArrow');
+    const header = document.querySelector('.special-toggle-header');
+    if (!body) return;
+    const isOpen = body.classList.toggle('open');
+    if (arrow) arrow.classList.toggle('open', isOpen);
+    if (header) header.setAttribute('aria-expanded', isOpen);
+}
+
 function initSpecialPredictions() {
     const username = sessionStorage.getItem('pollaUser');
     const displayName = localStorage.getItem(`pollaDisplayName:${username}`);

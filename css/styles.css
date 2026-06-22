@@ -1040,6 +1040,41 @@ input:focus, select:focus {
     border: 2px solid var(--primary);
 }
 
+.special-toggle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    gap: 12px;
+}
+
+.special-toggle-arrow {
+    font-size: 0.85rem;
+    color: var(--primary);
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.special-toggle-arrow.open {
+    transform: rotate(180deg);
+}
+
+.special-predictions-body {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    transition: max-height 0.35s ease, opacity 0.25s ease, padding-top 0.3s ease;
+}
+
+.special-predictions-body.open {
+    max-height: 600px;
+    opacity: 1;
+    padding-top: 20px;
+}
+
 .special-predictions-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
