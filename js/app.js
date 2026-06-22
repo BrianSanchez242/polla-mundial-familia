@@ -1779,13 +1779,21 @@ function renderCharts(myDisplayName) {
         if (window.accuracyChart && typeof window.accuracyChart.destroy === 'function') {
             window.accuracyChart.destroy();
         }
-        const donutColors = [
+        const donutPalette = [
             'rgba(0, 217, 255, 0.9)',
             'rgba(255, 51, 102, 0.8)',
             'rgba(255, 215, 0, 0.8)',
             'rgba(0, 255, 136, 0.8)',
-            'rgba(102, 126, 234, 0.8)'
+            'rgba(102, 126, 234, 0.8)',
+            'rgba(255, 140, 0, 0.85)',
+            'rgba(255, 100, 220, 0.8)',
+            'rgba(80, 220, 180, 0.8)',
+            'rgba(200, 160, 255, 0.8)',
+            'rgba(255, 200, 80, 0.8)',
+            'rgba(100, 180, 100, 0.8)',
+            'rgba(255, 80, 80, 0.8)',
         ];
+        const donutColors = participantData.map((_, i) => donutPalette[i % donutPalette.length]);
         window.accuracyChart = new Chart(accuracyCtx, {
             type: 'doughnut',
             data: {
