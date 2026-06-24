@@ -608,6 +608,74 @@ const defaultMatches = [
     { id: 72, group: 'L', team1: '🇵🇦 Panamá', team2: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra', dateTime: '2026-06-27T16:00:00-05:00', venue: 'MetLife Stadium, East Rutherford' },
 ];
 
+// ── Dieciseisavos de Final — bracket oficial FIFA 2026 ───────────────────────
+// Fuente: Wikipedia / FIFA. Match IDs 73-88 en orden cronológico.
+// Tiempos en PE (UTC-5). "Mejor 3°" = mejor tercero de esos grupos.
+const round32Bracket = [
+    // ── 28 de junio ─────────────────────────────────────────────────────────
+    { id: 73, dateTime: '2026-06-28T14:00:00-05:00', venue: 'SoFi Stadium, Inglewood (CA)',             slot1: '2° Grupo A', slot2: '2° Grupo B' },
+    // ── 29 de junio ─────────────────────────────────────────────────────────
+    { id: 76, dateTime: '2026-06-29T12:00:00-05:00', venue: 'NRG Stadium, Houston (TX)',                slot1: '1° Grupo C', slot2: '2° Grupo F' },
+    { id: 74, dateTime: '2026-06-29T15:30:00-05:00', venue: 'Gillette Stadium, Foxborough (MA)',        slot1: '1° Grupo E', slot2: 'Mejor 3° (A/B/C/D/F)' },
+    { id: 75, dateTime: '2026-06-29T20:00:00-05:00', venue: 'Estadio BBVA, Guadalupe',                 slot1: '1° Grupo F', slot2: '2° Grupo C' },
+    // ── 30 de junio ─────────────────────────────────────────────────────────
+    { id: 78, dateTime: '2026-06-30T12:00:00-05:00', venue: 'AT&T Stadium, Arlington (TX)',             slot1: '2° Grupo E', slot2: '2° Grupo I' },
+    { id: 77, dateTime: '2026-06-30T16:00:00-05:00', venue: 'MetLife Stadium, East Rutherford (NJ)',    slot1: '1° Grupo I', slot2: 'Mejor 3° (C/D/F/G/H)' },
+    { id: 79, dateTime: '2026-06-30T20:00:00-05:00', venue: 'Estadio Azteca, Ciudad de México',        slot1: '1° Grupo A', slot2: 'Mejor 3° (C/E/F/H/I)' },
+    // ── 1 de julio ──────────────────────────────────────────────────────────
+    { id: 80, dateTime: '2026-07-01T11:00:00-05:00', venue: 'Mercedes-Benz Stadium, Atlanta (GA)',      slot1: '1° Grupo L', slot2: 'Mejor 3° (E/H/I/J/K)' },
+    { id: 82, dateTime: '2026-07-01T15:00:00-05:00', venue: 'Lumen Field, Seattle (WA)',               slot1: '1° Grupo G', slot2: 'Mejor 3° (A/E/H/I/J)' },
+    { id: 81, dateTime: '2026-07-01T19:00:00-05:00', venue: "Levi's Stadium, Santa Clara (CA)",        slot1: '1° Grupo D', slot2: 'Mejor 3° (B/E/F/I/J)' },
+    // ── 2 de julio ──────────────────────────────────────────────────────────
+    { id: 84, dateTime: '2026-07-02T14:00:00-05:00', venue: 'SoFi Stadium, Inglewood (CA)',             slot1: '1° Grupo H', slot2: '2° Grupo J' },
+    { id: 83, dateTime: '2026-07-02T18:00:00-05:00', venue: 'BMO Field, Toronto',                      slot1: '2° Grupo K', slot2: '2° Grupo L' },
+    { id: 85, dateTime: '2026-07-02T22:00:00-05:00', venue: 'BC Place, Vancouver',                     slot1: '1° Grupo B', slot2: 'Mejor 3° (E/F/G/I/J)' },
+    // ── 3 de julio ──────────────────────────────────────────────────────────
+    { id: 88, dateTime: '2026-07-03T13:00:00-05:00', venue: 'AT&T Stadium, Arlington (TX)',             slot1: '2° Grupo D', slot2: '2° Grupo G' },
+    { id: 86, dateTime: '2026-07-03T17:00:00-05:00', venue: 'Hard Rock Stadium, Miami Gardens (FL)',    slot1: '1° Grupo J', slot2: '2° Grupo H' },
+    { id: 87, dateTime: '2026-07-03T20:30:00-05:00', venue: 'Arrowhead Stadium, Kansas City (MO)',     slot1: '1° Grupo K', slot2: 'Mejor 3° (D/E/I/J/L)' },
+];
+
+const round16Bracket = [
+    // ── 4 de julio ──────────────────────────────────────────────────────────
+    { id: 90, dateTime: '2026-07-04T12:00:00-05:00', venue: 'NRG Stadium, Houston (TX)',                  slot1: 'Gan. P73', slot2: 'Gan. P75' },
+    { id: 89, dateTime: '2026-07-04T16:00:00-05:00', venue: 'Lincoln Financial Field, Philadelphia (PA)', slot1: 'Gan. P74', slot2: 'Gan. P77' },
+    // ── 5 de julio ──────────────────────────────────────────────────────────
+    { id: 91, dateTime: '2026-07-05T15:00:00-05:00', venue: 'MetLife Stadium, East Rutherford (NJ)',      slot1: 'Gan. P76', slot2: 'Gan. P78' },
+    { id: 92, dateTime: '2026-07-05T19:00:00-05:00', venue: 'Estadio Azteca, Ciudad de México',          slot1: 'Gan. P79', slot2: 'Gan. P80' },
+    // ── 6 de julio ──────────────────────────────────────────────────────────
+    { id: 93, dateTime: '2026-07-06T14:00:00-05:00', venue: 'AT&T Stadium, Arlington (TX)',              slot1: 'Gan. P83', slot2: 'Gan. P84' },
+    { id: 94, dateTime: '2026-07-06T19:00:00-05:00', venue: 'Lumen Field, Seattle (WA)',                 slot1: 'Gan. P81', slot2: 'Gan. P82' },
+    // ── 7 de julio ──────────────────────────────────────────────────────────
+    { id: 95, dateTime: '2026-07-07T11:00:00-05:00', venue: 'Mercedes-Benz Stadium, Atlanta (GA)',       slot1: 'Gan. P86', slot2: 'Gan. P88' },
+    { id: 96, dateTime: '2026-07-07T15:00:00-05:00', venue: 'BC Place, Vancouver',                      slot1: 'Gan. P85', slot2: 'Gan. P87' },
+];
+
+const quarterFinalsBracket = [
+    // ── 9 de julio ──────────────────────────────────────────────────────────
+    { id: 97,  dateTime: '2026-07-09T15:00:00-05:00', venue: 'Gillette Stadium, Foxborough (MA)',        slot1: 'Gan. P89', slot2: 'Gan. P90' },
+    // ── 10 de julio ─────────────────────────────────────────────────────────
+    { id: 98,  dateTime: '2026-07-10T14:00:00-05:00', venue: 'SoFi Stadium, Inglewood (CA)',             slot1: 'Gan. P93', slot2: 'Gan. P94' },
+    // ── 11 de julio ─────────────────────────────────────────────────────────
+    { id: 99,  dateTime: '2026-07-11T16:00:00-05:00', venue: 'Hard Rock Stadium, Miami Gardens (FL)',    slot1: 'Gan. P91', slot2: 'Gan. P92' },
+    { id: 100, dateTime: '2026-07-11T20:00:00-05:00', venue: 'Arrowhead Stadium, Kansas City (MO)',      slot1: 'Gan. P95', slot2: 'Gan. P96' },
+];
+
+const semiFinalsBracket = [
+    // ── 14 de julio ─────────────────────────────────────────────────────────
+    { id: 101, dateTime: '2026-07-14T14:00:00-05:00', venue: 'AT&T Stadium, Arlington (TX)',             slot1: 'Gan. P97',  slot2: 'Gan. P98' },
+    // ── 15 de julio ─────────────────────────────────────────────────────────
+    { id: 102, dateTime: '2026-07-15T14:00:00-05:00', venue: 'Mercedes-Benz Stadium, Atlanta (GA)',      slot1: 'Gan. P99',  slot2: 'Gan. P100' },
+];
+
+const thirdPlaceBracket = [
+    { id: 103, dateTime: '2026-07-18T16:00:00-05:00', venue: 'Hard Rock Stadium, Miami Gardens (FL)',    slot1: 'Perd. P101', slot2: 'Perd. P102' },
+];
+
+const finalBracket = [
+    { id: 104, dateTime: '2026-07-19T14:00:00-05:00', venue: 'MetLife Stadium, East Rutherford (NJ)',    slot1: 'Gan. P101', slot2: 'Gan. P102' },
+];
+
 let matches = [];
 let participants = [];
 let results = [];
@@ -846,6 +914,14 @@ function toggleSpecialPredictions() {
     if (header) header.setAttribute('aria-expanded', isOpen);
 }
 
+function toggleKnockoutRound(key) {
+    const body  = document.getElementById('kp-body-' + key);
+    const arrow = document.getElementById('kp-arrow-' + key);
+    if (!body) return;
+    const isOpen = body.classList.toggle('open');
+    if (arrow) arrow.classList.toggle('open', isOpen);
+}
+
 function initSpecialPredictions() {
     const username = sessionStorage.getItem('pollaUser');
     const displayName = localStorage.getItem(`pollaDisplayName:${username}`);
@@ -1016,6 +1092,13 @@ async function init() {
     renderMyPredictions();
     renderResults();
     renderGroups();
+    renderRound32();
+    renderRound16();
+    renderQuarterFinals();
+    renderSemiFinals();
+    renderThirdPlace();
+    renderFinal();
+    renderKnockoutPredictions();
     updateLeaderboard();
     updateStats();
     initSpecialPredictions();
@@ -1542,6 +1625,300 @@ function renderGroups() {
     }).join('');
 }
 
+// Calcula standings de grupos desde defaultMatches + results globales
+function computeGroupStandings() {
+    const standings = {};
+    defaultMatches.forEach(m => {
+        if (!standings[m.group]) standings[m.group] = {};
+        [m.team1, m.team2].forEach(t => {
+            if (!standings[m.group][t]) standings[m.group][t] = { pts: 0, pj: 0, gf: 0, gc: 0, dg: 0 };
+        });
+        const r = results.find(r => r.matchId === m.id);
+        if (!r) return;
+        const s = standings[m.group];
+        const [g1, g2] = [r.score1, r.score2];
+        s[m.team1].pj++; s[m.team1].gf += g1; s[m.team1].gc += g2; s[m.team1].dg += g1 - g2;
+        s[m.team2].pj++; s[m.team2].gf += g2; s[m.team2].gc += g1; s[m.team2].dg += g2 - g1;
+        if (g1 > g2)      s[m.team1].pts += 3;
+        else if (g1 < g2) s[m.team2].pts += 3;
+        else { s[m.team1].pts += 1; s[m.team2].pts += 1; }
+    });
+    const sorted = {};
+    Object.entries(standings).forEach(([grp, teams]) => {
+        sorted[grp] = Object.entries(teams)
+            .map(([name, s]) => ({ name, ...s }))
+            .sort((a, b) => b.pts - a.pts || b.dg - a.dg || b.gf - a.gf);
+    });
+    return sorted;
+}
+
+// Calcula los 8 mejores terceros y los asigna a cada slot "Mejor 3°" del R32
+// usando un greedy por orden de bracket para evitar asignaciones duplicadas.
+function computeBestThirds(groupStandings) {
+    const thirds = [];
+    let completedGroups = 0;
+    Object.entries(groupStandings).forEach(([grp, teams]) => {
+        const played = teams.reduce((acc, t) => acc + t.pj, 0) / 2;
+        if (played >= 6) completedGroups++;
+        if (teams.length >= 3 && teams[2].pj > 0) {
+            const t = teams[2];
+            thirds.push({ group: grp, name: t.name, pts: t.pts, pj: t.pj, gf: t.gf, gc: t.gc, dg: t.dg });
+        }
+    });
+    thirds.sort((a, b) => b.pts - a.pts || b.dg - a.dg || b.gf - a.gf || a.gc - b.gc);
+    const best8 = thirds.slice(0, 8);
+    const allDone = completedGroups >= 12;
+
+    // Greedy: asigna cada slot al mejor tercero disponible de los grupos elegibles.
+    // Procesa en orden del bracket para que el resultado sea determinístico.
+    const assigned = new Set();
+    const slotMap = {};
+    round32Bracket.forEach(m => {
+        [m.slot1, m.slot2].forEach(slot => {
+            if (!slot.startsWith('Mejor 3°')) return;
+            const groups = slot.match(/\(([A-L/]+)\)/)?.[1].split('/') || [];
+            const q = best8.find(t => groups.includes(t.group) && !assigned.has(t.group));
+            if (q) { assigned.add(q.group); slotMap[slot] = q; }
+        });
+    });
+
+    return { best8, allDone, slotMap };
+}
+
+// Dieciseisavos de Final — bracket oficial FIFA 2026
+function renderRound32() {
+    const container = document.getElementById('round32Container');
+    if (!container) return;
+
+    const groupStandings = computeGroupStandings();
+    const { allDone: allGroupsDone, slotMap } = computeBestThirds(groupStandings);
+
+    function resolveSlot(slot) {
+        // "X° Grupo Y" → clasificado directo
+        const gm = slot.match(/^(\d)°\s+Grupo\s+([A-L])$/);
+        if (gm) {
+            const pos = parseInt(gm[1]) - 1;
+            const grp = gm[2];
+            const s = groupStandings[grp];
+            if (!s || !s[pos]) return null;
+            const team = s[pos];
+            const played = s.reduce((acc, t) => acc + t.pj, 0) / 2;
+            return { name: stripFlag(team.name), flag: team.name.replace(stripFlag(team.name), '').trim(), pts: team.pts, confirmed: played >= 6 };
+        }
+        // "Mejor 3° (A/B/C/D/F)" → asignación greedy pre-calculada
+        if (slot.startsWith('Mejor 3°')) {
+            const q = slotMap[slot];
+            if (!q) return null;
+            const s = groupStandings[q.group];
+            const played = s ? s.reduce((acc, t) => acc + t.pj, 0) / 2 : 0;
+            return { name: stripFlag(q.name), flag: q.name.replace(stripFlag(q.name), '').trim(), pts: q.pts, confirmed: allGroupsDone && played >= 6 };
+        }
+        return null;
+    }
+
+    // Group matches by date (PE)
+    const byDay = {};
+    round32Bracket.forEach(m => {
+        const dayKey = new Date(m.dateTime).toLocaleDateString('es-PE', {
+            timeZone: 'America/Lima', weekday: 'long', day: 'numeric', month: 'long'
+        });
+        if (!byDay[dayKey]) byDay[dayKey] = [];
+        byDay[dayKey].push(m);
+    });
+
+    container.innerHTML = Object.entries(byDay).map(([dayLabel, dayMatches]) => `
+        <div class="r32-day-block">
+            <div class="r32-day-header">
+                <span class="r32-day-title">${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}</span>
+            </div>
+            <div class="r32-matches-grid">
+                ${dayMatches.map(m => {
+                    const timePE = new Date(m.dateTime).toLocaleString('es-PE', {
+                        timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hour12: true
+                    });
+                    const isPast = new Date(m.dateTime) < new Date();
+
+                    function teamBlock(slot) {
+                        const resolved = resolveSlot(slot);
+                        const label = `<span class="r32-slot-pos">${slot}</span>`;
+                        if (!resolved) return `<div class="r32-team-block">${label}<span class="r32-team-name tbd">POR DEFINIR</span></div>`;
+                        const badge = resolved.confirmed
+                            ? `<span class="r32-badge confirmed">✓ CLASIF.</span>`
+                            : `<span class="r32-badge probable">~ PROBABLE</span>`;
+                        return `<div class="r32-team-block">${label}<span class="r32-team-name">${resolved.flag} ${resolved.name}</span>${badge}</div>`;
+                    }
+
+                    return `
+                    <div class="r32-match-card ${isPast ? 'r32-played' : ''}">
+                        <div class="r32-match-id">Partido ${m.id}</div>
+                        <div class="r32-teams-col">
+                            ${teamBlock(m.slot1)}
+                            <span class="r32-vs">vs</span>
+                            ${teamBlock(m.slot2)}
+                        </div>
+                        <div class="r32-meta">
+                            <span>🕐 ${timePE} PE</span>
+                            <span>📍 ${m.venue}</span>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`
+    ).join('');
+}
+
+function renderKnockoutRound(bracket, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const byDay = {};
+    bracket.forEach(m => {
+        const dayKey = new Date(m.dateTime).toLocaleDateString('es-PE', {
+            timeZone: 'America/Lima', weekday: 'long', day: 'numeric', month: 'long'
+        });
+        if (!byDay[dayKey]) byDay[dayKey] = [];
+        byDay[dayKey].push(m);
+    });
+
+    container.innerHTML = Object.entries(byDay).map(([dayLabel, dayMatches]) => `
+        <div class="r32-day-block">
+            <div class="r32-day-header">
+                <span class="r32-day-title">${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}</span>
+            </div>
+            <div class="r32-matches-grid">
+                ${dayMatches.map(m => {
+                    const timePE = new Date(m.dateTime).toLocaleString('es-PE', {
+                        timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hour12: true
+                    });
+                    const isPast = new Date(m.dateTime) < new Date();
+                    const teamBlock = slot => `
+                        <div class="r32-team-block">
+                            <span class="r32-slot-pos">${slot}</span>
+                            <span class="r32-team-name tbd">POR DEFINIR</span>
+                        </div>`;
+                    return `
+                    <div class="r32-match-card ${isPast ? 'r32-played' : ''}">
+                        <div class="r32-match-id">Partido ${m.id}</div>
+                        <div class="r32-teams-col">
+                            ${teamBlock(m.slot1)}
+                            <span class="r32-vs">vs</span>
+                            ${teamBlock(m.slot2)}
+                        </div>
+                        <div class="r32-meta">
+                            <span>🕐 ${timePE} PE</span>
+                            <span>📍 ${m.venue}</span>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`
+    ).join('');
+}
+
+function renderKnockoutPredictions() {
+    const container = document.getElementById('knockoutPredictionsContainer');
+    if (!container) return;
+
+    const groupStandings = computeGroupStandings();
+    const { allDone: allGroupsDone, slotMap } = computeBestThirds(groupStandings);
+
+    function resolveSlot(slot) {
+        // "X° Grupo Y" → clasificado directo
+        const gm = slot.match(/^(\d)°\s+Grupo\s+([A-L])$/);
+        if (gm) {
+            const pos = parseInt(gm[1]) - 1;
+            const grp = gm[2];
+            const s = groupStandings[grp];
+            if (!s || !s[pos]) return null;
+            const team = s[pos];
+            const played = s.reduce((acc, t) => acc + t.pj, 0) / 2;
+            return { display: team.name, confirmed: played >= 6 };
+        }
+        // "Mejor 3° (A/B/C/D/F)" → asignación greedy pre-calculada
+        if (slot.startsWith('Mejor 3°')) {
+            const q = slotMap[slot];
+            if (!q) return null;
+            const s = groupStandings[q.group];
+            const played = s ? s.reduce((acc, t) => acc + t.pj, 0) / 2 : 0;
+            return { display: q.name, confirmed: allGroupsDone && played >= 6 };
+        }
+        return null;
+    }
+
+    function teamCell(slot, alignRight) {
+        const r = resolveSlot(slot);
+        const shortSlot = slot.replace('Mejor 3° ', '3° ');
+        const alignClass = alignRight ? ' kp-right' : '';
+        if (r) {
+            const icon  = r.confirmed ? '✓' : '~';
+            const color = r.confirmed ? '#00FF88' : '#FFD700';
+            return `<div class="kp-team-cell${alignClass}">
+                <span class="kp-slot-tag" style="color:${color};">${icon} ${shortSlot}</span>
+                <span class="kp-team-display">${r.display}</span>
+            </div>`;
+        }
+        return `<div class="kp-team-cell${alignClass}">
+            <span class="kp-slot-tag">${shortSlot}</span>
+            <span class="kp-team-display kp-tbd">Por definir</span>
+        </div>`;
+    }
+
+    function matchCard(m) {
+        return `
+        <div class="match-prediction kp-pending">
+            <div class="kp-match-top">
+                <span class="match-info">P${m.id} · ${formatPETime(m.dateTime)}</span>
+                <span class="kp-locked-chip">🔒 Sin abrir</span>
+            </div>
+            <div class="match-teams-row">
+                ${teamCell(m.slot1, false)}
+                <input type="number" class="score-input" disabled min="0" max="20" placeholder="-">
+                <input type="number" class="score-input" disabled min="0" max="20" placeholder="-">
+                ${teamCell(m.slot2, true)}
+            </div>
+            <div class="match-info kp-venue">📍 ${m.venue}</div>
+        </div>`;
+    }
+
+    const rounds = [
+        { key: 'r32',  icon: '🏆', title: 'Dieciseisavos de Final', subtitle: '16 partidos · 28 jun – 3 jul 2026',  startLabel: '29 JUN', mod: '',        bracket: round32Bracket },
+        { key: 'r16',  icon: '⚔️', title: 'Octavos de Final',       subtitle: '8 partidos · 4–7 jul 2026',          startLabel: '4 JUL',  mod: '--r16',   bracket: round16Bracket },
+        { key: 'qf',   icon: '🛡️', title: 'Cuartos de Final',       subtitle: '4 partidos · 9–11 jul 2026',         startLabel: '9 JUL',  mod: '--qf',    bracket: quarterFinalsBracket },
+        { key: 'sf',   icon: '🔥', title: 'Semifinales',             subtitle: '2 partidos · 14–15 jul 2026',        startLabel: '14 JUL', mod: '--sf',    bracket: semiFinalsBracket },
+        { key: '3rd',  icon: '🥉', title: 'Tercer Puesto',           subtitle: 'Hard Rock Stadium, Miami · 18 jul',  startLabel: '18 JUL', mod: '--3rd',   bracket: thirdPlaceBracket },
+        { key: 'fin',  icon: '🏆', title: 'Gran Final',              subtitle: 'MetLife Stadium, NJ · 19 jul 2026',  startLabel: '19 JUL', mod: '--final', bracket: finalBracket },
+    ];
+
+    container.innerHTML = rounds.map(r => `
+        <div class="r32-section r32-section${r.mod} kp-round-card">
+            <div class="r32-header kp-toggle-header"
+                 onclick="toggleKnockoutRound('${r.key}')"
+                 role="button" aria-expanded="false">
+                <div>
+                    <h4 class="kp-round-title">${r.icon} ${r.title}</h4>
+                    <p class="r32-subtitle">${r.subtitle}</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+                    <div class="r32-start-badge r32-start-badge${r.mod}">
+                        <span class="r32-start-label">INICIO</span>
+                        <span class="r32-start-date">${r.startLabel}</span>
+                    </div>
+                    <span class="special-toggle-arrow" id="kp-arrow-${r.key}">▼</span>
+                </div>
+            </div>
+            <div class="kp-body" id="kp-body-${r.key}">
+                ${r.bracket.map(m => matchCard(m)).join('')}
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderRound16()      { renderKnockoutRound(round16Bracket,      'round16Container'); }
+function renderQuarterFinals(){ renderKnockoutRound(quarterFinalsBracket, 'quarterFinalsContainer'); }
+function renderSemiFinals()   { renderKnockoutRound(semiFinalsBracket,    'semiFinalsContainer'); }
+function renderThirdPlace()   { renderKnockoutRound(thirdPlaceBracket,    'thirdPlaceContainer'); }
+function renderFinal()        { renderKnockoutRound(finalBracket,         'finalContainer'); }
+
 // Actualizar tabla de posiciones
 function updateLeaderboard() {
     // Siempre mostrar todos los participantes, aunque no haya resultados
@@ -1840,6 +2217,7 @@ function switchTab(tabName) {
     const stickyWrapper = document.getElementById('saveBtnStickyWrapper');
     if (tabName === 'predictions') {
         renderMatches();
+        renderKnockoutPredictions();
     } else {
         if (stickyWrapper) stickyWrapper.style.display = 'none';
     }

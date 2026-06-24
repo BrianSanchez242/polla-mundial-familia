@@ -352,6 +352,17 @@
                 </p>
                 <div id="matchesContainer"></div>
 
+                <!-- Predicciones Fase Eliminatoria -->
+                <h3 class="section-subtitle" style="margin-top:44px;">🏆 Predicciones Fase Eliminatoria</h3>
+                <div class="kp-locked-notice">
+                    <span style="font-size:1.5rem; line-height:1;">🔒</span>
+                    <div>
+                        <p class="kp-lock-title">Predicciones bloqueadas</p>
+                        <p class="kp-lock-body">Se habilitarán cuando finalice la Fase de Grupos y los 32 clasificados estén definidos <strong>~28 jun</strong>. Por ahora puedes ver el cuadro y los equipos probables.</p>
+                    </div>
+                </div>
+                <div id="knockoutPredictionsContainer"></div>
+
                 <div style="margin-top: 30px; padding: 20px; background: rgba(0, 217, 255, 0.1); border-radius: 12px; border-left: 3px solid var(--primary); margin-bottom: 90px;">
                     <p style="color: var(--text); margin: 0;">
                         ⚠️ <strong>Importante:</strong> Asegúrate de completar todas las predicciones antes de guardar.
@@ -385,6 +396,96 @@
                 <p style="color: var(--text-dim); margin-bottom: 30px;">🏆 48 selecciones · 12 grupos · USA, México y Canadá</p>
                 
                 <div class="groups-grid" id="groups-grid"></div>
+
+                <!-- DIECISEISAVOS DE FINAL -->
+                <div class="r32-section" id="round32Section">
+                    <div class="r32-header">
+                        <div>
+                            <h2 class="card-title" style="margin-bottom:4px">🏆 Dieciseisavos de Final</h2>
+                            <p class="r32-subtitle">32 equipos · 16 partidos · 29 jun – 2 jul 2026</p>
+                        </div>
+                        <div class="r32-start-badge">
+                            <span class="r32-start-label">INICIO</span>
+                            <span class="r32-start-date">29 JUN</span>
+                        </div>
+                    </div>
+                    <div id="round32Container"></div>
+                </div>
+
+                <!-- OCTAVOS DE FINAL -->
+                <div class="r32-section r32-section--r16" id="round16Section">
+                    <div class="r32-header">
+                        <div>
+                            <h2 class="card-title" style="margin-bottom:4px">⚔️ Octavos de Final</h2>
+                            <p class="r32-subtitle">16 equipos · 8 partidos · 4–7 jul 2026</p>
+                        </div>
+                        <div class="r32-start-badge r32-start-badge--r16">
+                            <span class="r32-start-label">INICIO</span>
+                            <span class="r32-start-date">4 JUL</span>
+                        </div>
+                    </div>
+                    <div id="round16Container"></div>
+                </div>
+
+                <!-- CUARTOS DE FINAL -->
+                <div class="r32-section r32-section--qf" id="quarterFinalsSection">
+                    <div class="r32-header">
+                        <div>
+                            <h2 class="card-title" style="margin-bottom:4px">🛡️ Cuartos de Final</h2>
+                            <p class="r32-subtitle">8 equipos · 4 partidos · 9–11 jul 2026</p>
+                        </div>
+                        <div class="r32-start-badge r32-start-badge--qf">
+                            <span class="r32-start-label">INICIO</span>
+                            <span class="r32-start-date">9 JUL</span>
+                        </div>
+                    </div>
+                    <div id="quarterFinalsContainer"></div>
+                </div>
+
+                <!-- SEMIFINALES -->
+                <div class="r32-section r32-section--sf" id="semiFinalsSection">
+                    <div class="r32-header">
+                        <div>
+                            <h2 class="card-title" style="margin-bottom:4px">🔥 Semifinales</h2>
+                            <p class="r32-subtitle">4 equipos · 2 partidos · 14–15 jul 2026</p>
+                        </div>
+                        <div class="r32-start-badge r32-start-badge--sf">
+                            <span class="r32-start-label">INICIO</span>
+                            <span class="r32-start-date">14 JUL</span>
+                        </div>
+                    </div>
+                    <div id="semiFinalsContainer"></div>
+                </div>
+
+                <!-- TERCER PUESTO -->
+                <div class="r32-section r32-section--3rd" id="thirdPlaceSection">
+                    <div class="r32-header">
+                        <div>
+                            <h2 class="card-title" style="margin-bottom:4px">🥉 Tercer Puesto</h2>
+                            <p class="r32-subtitle">Hard Rock Stadium, Miami · 18 jul 2026</p>
+                        </div>
+                        <div class="r32-start-badge r32-start-badge--3rd">
+                            <span class="r32-start-label">FECHA</span>
+                            <span class="r32-start-date">18 JUL</span>
+                        </div>
+                    </div>
+                    <div id="thirdPlaceContainer"></div>
+                </div>
+
+                <!-- FINAL -->
+                <div class="r32-section r32-section--final" id="finalSection">
+                    <div class="r32-header">
+                        <div>
+                            <h2 class="card-title" style="margin-bottom:4px">🏆 Gran Final</h2>
+                            <p class="r32-subtitle">MetLife Stadium, East Rutherford · 19 jul 2026</p>
+                        </div>
+                        <div class="r32-start-badge r32-start-badge--final">
+                            <span class="r32-start-label">FINAL</span>
+                            <span class="r32-start-date">19 JUL</span>
+                        </div>
+                    </div>
+                    <div id="finalContainer"></div>
+                </div>
 
                 <div class="info-box" style="margin-top: 30px; padding: 20px; background: var(--dark-3); border-radius: 15px; border-left: 4px solid var(--primary);">
                     <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 1.2rem;">ℹ️ Información del Torneo</h3>
