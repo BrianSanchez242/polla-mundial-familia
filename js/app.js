@@ -2096,10 +2096,10 @@ function renderKnockoutPredictions() {
                         <span class="r32-start-label">INICIO</span>
                         <span class="r32-start-date">${r.startLabel}</span>
                     </div>
-                    <span class="special-toggle-arrow" id="kp-arrow-${r.key}">▼</span>
+                    <span class="special-toggle-arrow" id="kp-arrow-${r.key}">${r.active ? '▲' : '▼'}</span>
                 </div>
             </div>
-            <div class="kp-body" id="kp-body-${r.key}">
+            <div class="kp-body ${r.active ? 'open' : ''}" id="kp-body-${r.key}">
                 ${r.bracket.map(m => matchCard(m, r.active)).join('')}
             </div>
         </div>
