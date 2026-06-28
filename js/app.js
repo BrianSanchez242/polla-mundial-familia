@@ -1484,8 +1484,8 @@ async function submitPredictions() {
         return;
     }
 
-    // Solo guardar partidos donde el usuario ingresó ambos scores explícitamente
-    const newPredictions = matches
+    // Predicciones de fase de grupos (inputs visibles y desbloqueados)
+    const groupPredictions = matches
         .filter(match => {
             if (isMatchLocked(match)) return false;
             const s1 = document.getElementById(`score1-${match.id}`)?.value;
@@ -1497,6 +1497,22 @@ async function submitPredictions() {
             score1: parseInt(document.getElementById(`score1-${match.id}`)?.value),
             score2: parseInt(document.getElementById(`score2-${match.id}`)?.value)
         }));
+
+    // Predicciones de 16avos (misma lógica — inputs desbloqueados con ambos valores)
+    const knockoutPredictions = round32Bracket
+        .filter(m => {
+            if (isMatchLocked(m)) return false;
+            const s1 = document.getElementById(`score1-${m.id}`)?.value;
+            const s2 = document.getElementById(`score2-${m.id}`)?.value;
+            return s1 !== '' && s1 !== undefined && s2 !== '' && s2 !== undefined;
+        })
+        .map(m => ({
+            matchId: m.id,
+            score1: parseInt(document.getElementById(`score1-${m.id}`).value),
+            score2: parseInt(document.getElementById(`score2-${m.id}`).value)
+        }));
+
+    const newPredictions = [...groupPredictions, ...knockoutPredictions];
 
     if (newPredictions.length === 0) {
         showToast('⚠️ Ingresa al menos 1 predicción antes de guardar');
@@ -1532,6 +1548,7 @@ async function submitPredictions() {
     else participants.push(participant);
 
     renderMatches();
+    renderKnockoutPredictions();
     renderMyPredictions();
     updateLeaderboard();
     updateStats();
@@ -1967,83 +1984,102 @@ function renderKnockoutPredictions() {
         </div>`;
     }
 
-    // Card activa para R32 (inputs habilitados, lock por partido)
-    function matchCardR32(m) {
-        const locked     = isMatchLocked(m);
-        const liveResult = results.find(r => r.matchId === m.id);
-        const myPred     = myPreds.find(p => p.matchId === m.id);
-        const s1val      = myPred !== undefined ? myPred.score1 : '';
-        const s2val      = myPred !== undefined ? myPred.score2 : '';
+    // Card de partido — mismo comportamiento que Fase de Grupos
+    function matchCard(m, active) {
+        const r1 = resolveSlot(m.slot1);
+        const r2 = resolveSlot(m.slot2);
+        const team1Name = r1 ? r1.display : m.slot1.replace('Mejor 3° ', '3° ');
+        const team2Name = r2 ? r2.display : m.slot2.replace('Mejor 3° ', '3° ');
 
-        // Badge de puntos si ya hay resultado
+        if (!active) {
+            return `
+            <div class="match-prediction match-locked kp-pending" id="match-card-${m.id}">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                    <span class="match-info" style="margin:0;">P${m.id} · ${formatPETime(m.dateTime)}</span>
+                    <span class="match-status-locked">🔒 Sin abrir</span>
+                    <span class="match-info" style="margin:0 0 0 auto;white-space:nowrap;">📍 ${m.venue}</span>
+                </div>
+                <div class="match-teams-row">
+                    <div class="team-name team-name-left">${team1Name}</div>
+                    <input type="number" class="score-input" disabled min="0" max="20" placeholder="-">
+                    <input type="number" class="score-input" disabled min="0" max="20" placeholder="-">
+                    <div class="team-name team-name-right">${team2Name}</div>
+                </div>
+            </div>`;
+        }
+
+        const lockedByTime = isMatchLocked(m);
+        const liveResult   = results.find(r => r.matchId === m.id);
+        const myPred       = myPreds.find(p => p.matchId === m.id);
+        const lockedByUser = !!myPred;
+        const locked       = lockedByTime || lockedByUser || !!liveResult;
+
+        const s1val = myPred !== undefined ? myPred.score1 : '';
+        const s2val = myPred !== undefined ? myPred.score2 : '';
+
+        const statusBadge = lockedByUser
+            ? '<span class="match-status-locked">🔒 TU PICK</span>'
+            : (lockedByTime || liveResult)
+                ? '<span class="match-status-locked">🔒 CERRADO</span>'
+                : `<span class="match-status-open">⏰ ${getTimeUntilLock(m)}</span>`;
+
         let ptsBadge = '';
         if (liveResult && myPred !== undefined) {
             const exact = myPred.score1 === liveResult.score1 && myPred.score2 === liveResult.score2;
             const tend  = !exact && Math.sign(myPred.score1 - myPred.score2) === Math.sign(liveResult.score1 - liveResult.score2);
-            if (exact)     ptsBadge = `<span class="ko-pts exact">+3 ✓</span>`;
-            else if (tend) ptsBadge = `<span class="ko-pts tend">+1</span>`;
-            else           ptsBadge = `<span class="ko-pts miss">0</span>`;
+            if (exact)     ptsBadge = '<span class="ko-pts exact">+3 ✓</span>';
+            else if (tend) ptsBadge = '<span class="ko-pts tend">+1</span>';
+            else           ptsBadge = '<span class="ko-pts miss">0</span>';
         }
 
-        let chip;
+        // Live badge — igual que Fase de Grupos
+        const liveKey = r1 && r2 ? `${stripFlag(r1.display)}|${stripFlag(r2.display)}` : null;
+        const live = liveKey ? liveScores[liveKey] : null;
+        const minsSinceStart = (new Date() - new Date(m.dateTime)) / 60000;
+        const isInTimeWindow = minsSinceStart >= 0 && minsSinceStart < 130;
+        let liveBadge = '';
         if (liveResult) {
-            chip = `<span class="kp-locked-chip kp-chip-result">⚽ ${liveResult.score1}–${liveResult.score2}</span>`;
-        } else if (locked) {
-            chip = `<span class="kp-locked-chip">🔒 CERRADO</span>`;
-        } else {
-            chip = `<span class="kp-locked-chip kp-chip-open">⏰ ${getTimeUntilLock(m)}</span>`;
+            liveBadge = `<span style="background:rgba(0,217,255,0.1);border:1px solid #00D9FF;color:#00D9FF;padding:4px 12px;border-radius:12px;font-size:0.8rem;font-weight:700;">✅ ${liveResult.score1}-${liveResult.score2} · FINAL</span>`;
+        } else if (live && live.status === 'IN_PLAY') {
+            liveBadge = `<span style="background:rgba(0,255,136,0.15);border:1px solid #00FF88;color:#00FF88;padding:4px 12px;border-radius:12px;font-size:0.8rem;font-weight:700;animation:pulse 1.5s infinite;">⚽ ${live.home_score}-${live.away_score} · ${live.minute || ''}' EN VIVO</span>`;
+        } else if (live && live.status === 'PAUSED') {
+            liveBadge = `<span style="background:rgba(255,215,0,0.15);border:1px solid #FFD700;color:#FFD700;padding:4px 12px;border-radius:12px;font-size:0.8rem;font-weight:700;">⏸ ${live.home_score}-${live.away_score} · DESCANSO</span>`;
+        } else if (isInTimeWindow) {
+            const knownScore = (live && live.home_score !== null && live.away_score !== null) ? ` ${live.home_score}-${live.away_score} ·` : '';
+            liveBadge = `<span style="background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.4);color:#00FF88;padding:4px 12px;border-radius:12px;font-size:0.8rem;font-weight:700;animation:pulse 1.5s infinite;">⚽${knownScore} EN CURSO</span>`;
         }
 
-        const dis     = (locked || liveResult) ? 'disabled' : '';
-        const picked  = myPred !== undefined ? ' kp-r32-picked' : '';
+        const disabledAttr = locked ? 'disabled' : '';
+        const lockedClass  = locked ? 'match-locked' : '';
+        const pickedClass  = myPred !== undefined ? 'kp-r32-picked' : '';
 
         return `
-        <div class="match-prediction${picked}">
-            <div class="kp-match-top">
-                <span class="match-info">P${m.id} · ${formatPETime(m.dateTime)}</span>
-                <div style="display:flex;gap:6px;align-items:center;">${ptsBadge}${chip}</div>
+        <div class="match-prediction ${lockedClass} ${pickedClass}" id="match-card-${m.id}">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                <span class="match-info" style="margin:0;">P${m.id} · ${formatPETime(m.dateTime)}</span>
+                ${statusBadge}${ptsBadge}${liveBadge}
+                <span class="match-info" style="margin:0 0 0 auto;white-space:nowrap;">📍 ${m.venue}</span>
             </div>
             <div class="match-teams-row">
-                ${teamCell(m.slot1, false)}
-                <input type="number" id="score1-${m.id}" class="score-input" ${dis}
-                       min="0" max="20" placeholder="-" ${s1val !== '' ? `value="${s1val}"` : ''}>
-                <input type="number" id="score2-${m.id}" class="score-input" ${dis}
-                       min="0" max="20" placeholder="-" ${s2val !== '' ? `value="${s2val}"` : ''}>
-                ${teamCell(m.slot2, true)}
+                <div class="team-name team-name-left">${team1Name}</div>
+                <input type="number" class="score-input" id="score1-${m.id}" min="0" max="20"
+                       placeholder="-" ${s1val !== '' ? `value="${s1val}"` : ''} ${disabledAttr}>
+                <input type="number" class="score-input" id="score2-${m.id}" min="0" max="20"
+                       placeholder="-" ${s2val !== '' ? `value="${s2val}"` : ''} ${disabledAttr}>
+                <div class="team-name team-name-right">${team2Name}</div>
             </div>
-            <div class="match-info kp-venue">📍 ${m.venue}</div>
         </div>`;
     }
 
-    // Card visual (rondas aún no abiertas)
-    function matchCardLocked(m) {
-        return `
-        <div class="match-prediction kp-pending">
-            <div class="kp-match-top">
-                <span class="match-info">P${m.id} · ${formatPETime(m.dateTime)}</span>
-                <span class="kp-locked-chip">🔒 Sin abrir</span>
-            </div>
-            <div class="match-teams-row">
-                ${teamCell(m.slot1, false)}
-                <input type="number" class="score-input" disabled min="0" max="20" placeholder="-">
-                <input type="number" class="score-input" disabled min="0" max="20" placeholder="-">
-                ${teamCell(m.slot2, true)}
-            </div>
-            <div class="match-info kp-venue">📍 ${m.venue}</div>
-        </div>`;
-    }
-
-    // Contador de picks guardados en R32
-    const r32Saved   = round32Bracket.filter(m => myPreds.find(p => p.matchId === m.id)).length;
-    const r32Pending = round32Bracket.filter(m => !isMatchLocked(m) && !results.find(r => r.matchId === m.id)).length;
+    const r32Saved = round32Bracket.filter(m => myPreds.find(p => p.matchId === m.id)).length;
 
     const rounds = [
-        { key: 'r32',  icon: '🏆', title: 'Dieciseisavos de Final', subtitle: '16 partidos · 28 jun – 3 jul 2026',  startLabel: '28 JUN', mod: '',        bracket: round32Bracket,        active: true  },
-        { key: 'r16',  icon: '⚔️', title: 'Octavos de Final',       subtitle: '8 partidos · 4–7 jul 2026',          startLabel: '4 JUL',  mod: '--r16',   bracket: round16Bracket,        active: false },
-        { key: 'qf',   icon: '🛡️', title: 'Cuartos de Final',       subtitle: '4 partidos · 9–11 jul 2026',         startLabel: '9 JUL',  mod: '--qf',    bracket: quarterFinalsBracket,  active: false },
-        { key: 'sf',   icon: '🔥', title: 'Semifinales',             subtitle: '2 partidos · 14–15 jul 2026',        startLabel: '14 JUL', mod: '--sf',    bracket: semiFinalsBracket,     active: false },
-        { key: '3rd',  icon: '🥉', title: 'Tercer Puesto',           subtitle: 'Hard Rock Stadium, Miami · 18 jul',  startLabel: '18 JUL', mod: '--3rd',   bracket: thirdPlaceBracket,     active: false },
-        { key: 'fin',  icon: '🏆', title: 'Gran Final',              subtitle: 'MetLife Stadium, NJ · 19 jul 2026',  startLabel: '19 JUL', mod: '--final', bracket: finalBracket,          active: false },
+        { key: 'r32',  icon: '🏆', title: 'Dieciseisavos de Final', subtitle: `16 partidos · 28 jun – 3 jul 2026 · <span style="color:#00FF88;">${r32Saved}/16 guardados</span>`, startLabel: '28 JUN', mod: '',        bracket: round32Bracket,        active: true  },
+        { key: 'r16',  icon: '⚔️', title: 'Octavos de Final',       subtitle: '8 partidos · 4–7 jul 2026',                                                                         startLabel: '4 JUL',  mod: '--r16',   bracket: round16Bracket,        active: false },
+        { key: 'qf',   icon: '🛡️', title: 'Cuartos de Final',       subtitle: '4 partidos · 9–11 jul 2026',                                                                        startLabel: '9 JUL',  mod: '--qf',    bracket: quarterFinalsBracket,  active: false },
+        { key: 'sf',   icon: '🔥', title: 'Semifinales',             subtitle: '2 partidos · 14–15 jul 2026',                                                                       startLabel: '14 JUL', mod: '--sf',    bracket: semiFinalsBracket,     active: false },
+        { key: '3rd',  icon: '🥉', title: 'Tercer Puesto',           subtitle: 'Hard Rock Stadium, Miami · 18 jul',                                                                 startLabel: '18 JUL', mod: '--3rd',   bracket: thirdPlaceBracket,     active: false },
+        { key: 'fin',  icon: '🏆', title: 'Gran Final',              subtitle: 'MetLife Stadium, NJ · 19 jul 2026',                                                                 startLabel: '19 JUL', mod: '--final', bracket: finalBracket,          active: false },
     ];
 
     container.innerHTML = rounds.map(r => `
@@ -2064,14 +2100,7 @@ function renderKnockoutPredictions() {
                 </div>
             </div>
             <div class="kp-body" id="kp-body-${r.key}">
-                ${r.active
-                    ? r.bracket.map(m => matchCardR32(m)).join('') +
-                      `<div class="kp-save-row">
-                          <button onclick="saveKnockoutPredictions()" class="kp-save-btn">💾 Guardar picks 16avos</button>
-                          <span class="kp-r32-status">${r32Saved} guardados · ${r32Pending} pendientes</span>
-                       </div>`
-                    : r.bracket.map(m => matchCardLocked(m)).join('')
-                }
+                ${r.bracket.map(m => matchCard(m, r.active)).join('')}
             </div>
         </div>
     `).join('');
