@@ -922,6 +922,14 @@ function toggleKnockoutRound(key) {
     if (arrow) arrow.classList.toggle('open', isOpen);
 }
 
+function togglePhaseCard(phase) {
+    const body  = document.getElementById('phase-body-' + phase);
+    const arrow = document.getElementById('phase-arrow-' + phase);
+    if (!body) return;
+    const isOpen = body.classList.toggle('open');
+    if (arrow) arrow.textContent = isOpen ? '▲' : '▼';
+}
+
 function initSpecialPredictions() {
     const username = sessionStorage.getItem('pollaUser');
     const displayName = localStorage.getItem(`pollaDisplayName:${username}`);

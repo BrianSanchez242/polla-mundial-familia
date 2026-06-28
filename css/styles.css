@@ -1856,4 +1856,52 @@ input:focus, select:focus {
     .kp-round-card .match-teams-row { gap: 8px; }
     .kp-save-row { flex-wrap: wrap; }
 }
+
+/* ── Phase collapsible cards (Predicciones tab) ── */
+.phase-card {
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-top: 24px;
+}
+.phase-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(255,255,255,0.03);
+    transition: background 0.2s;
+}
+.phase-card-header:hover { background: rgba(255,255,255,0.06); }
+.phase-card-sub {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin: 0;
+}
+.phase-card-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+.phase-card-badge--done   { background: rgba(255,255,255,0.08); color: var(--text-dim); }
+.phase-card-badge--active { background: rgba(0,255,136,0.15);  color: #00FF88; }
+.phase-card-body {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 20px;
+    border-top: 0px solid rgba(255,255,255,0.07);
+    transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease, border-top-width 0.1s;
+}
+.phase-card-body.open {
+    max-height: 60000px;
+    opacity: 1;
+    padding: 20px 20px 4px;
+    border-top-width: 1px;
+}
     </style>
