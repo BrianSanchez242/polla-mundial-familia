@@ -1195,6 +1195,59 @@ function renderMyPredictions() {
         });
     });
 
+    // ── Predicciones R32 ──────────────────────────────────────────────────────
+    const r32Preds = round32Bracket
+        .map(m => ({ match: m, pred: me.predictions.find(p => p.matchId === m.id) }))
+        .filter(x => x.pred);
+
+    if (r32Preds.length > 0) {
+        const groupStandings = computeGroupStandings();
+        const { slotMap } = computeBestThirds(groupStandings);
+
+        function resolveSlotName(slot) {
+            const gm = slot.match(/^(\d)°\s+Grupo\s+([A-L])$/);
+            if (gm) {
+                const s = groupStandings[gm[2]];
+                return s?.[parseInt(gm[1]) - 1]?.name || slot;
+            }
+            if (slot.startsWith('Mejor 3°')) return slotMap[slot]?.name || slot;
+            return slot;
+        }
+
+        html += `<h4 style="color:var(--primary); margin:24px 0 8px; font-size:0.95rem; letter-spacing:1px;">🏆 DIECISEISAVOS DE FINAL</h4>`;
+        r32Preds.forEach(({ match: m, pred }) => {
+            const result = results.find(r => r.matchId === m.id);
+            const t1 = resolveSlotName(m.slot1);
+            const t2 = resolveSlotName(m.slot2);
+            let pointsBadge = '';
+            if (result) {
+                const isExact = pred.score1 === result.score1 && pred.score2 === result.score2;
+                const isTend  = !isExact && Math.sign(pred.score1 - pred.score2) === Math.sign(result.score1 - result.score2);
+                if (isExact)     pointsBadge = `<span style="background:rgba(0,255,136,0.15);color:#00FF88;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">+3 pts ✓</span>`;
+                else if (isTend) pointsBadge = `<span style="background:rgba(255,215,0,0.15);color:#FFD700;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">+1 pt</span>`;
+                else             pointsBadge = `<span style="background:rgba(255,51,102,0.15);color:#FF3366;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">0 pts</span>`;
+            }
+            const scoreBlock = result
+                ? `<div style="text-align:center;min-width:80px;">
+                       <div style="background:rgba(0,217,255,0.12);color:#00D9FF;padding:4px 12px;border-radius:8px;font-weight:700;font-size:1rem;">${result.score1} - ${result.score2}</div>
+                       <div style="font-size:0.72rem;color:#A0A8C0;margin-top:3px;">tu pick: ${pred.score1}–${pred.score2}</div>
+                   </div>`
+                : `<div style="text-align:center;min-width:80px;">
+                       <span style="background:rgba(0,217,255,0.08);color:#5A8FA8;padding:4px 12px;border-radius:8px;font-weight:700;font-size:1rem;border:1px dashed rgba(0,217,255,0.2);">${pred.score1} - ${pred.score2}</span>
+                   </div>`;
+            html += `
+                <div class="pick-card">
+                    <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px;">P${m.id} · ${formatPETime(m.dateTime)}</div>
+                    <div class="pick-card-teams">
+                        <span class="pick-team pick-team-left">${t1}</span>
+                        ${scoreBlock}
+                        <span class="pick-team pick-team-right">${t2}</span>
+                    </div>
+                    ${pointsBadge ? `<div class="pick-card-points">${pointsBadge}</div>` : ''}
+                </div>`;
+        });
+    }
+
     container.innerHTML = html;
 }
 
@@ -1822,8 +1875,36 @@ function renderKnockoutPredictions() {
     const groupStandings = computeGroupStandings();
     const { allDone: allGroupsDone, slotMap } = computeBestThirds(groupStandings);
 
+    // Predicciones del usuario actual
+    const username    = sessionStorage.getItem('pollaUser');
+    const displayName = localStorage.getItem(`pollaDisplayName:${username}`);
+    const me          = participants.find(p => p.name === displayName);
+    const myPreds     = me?.predictions || [];
+
+    // Aviso dinámico según fecha
+    const notice = document.getElementById('kpNotice');
+    if (notice) {
+        const r32Open = new Date() >= new Date('2026-06-27T20:00:00-05:00');
+        if (r32Open) {
+            notice.innerHTML = `<div class="kp-open-notice">
+                <span style="font-size:1.3rem;">✅</span>
+                <div>
+                    <p class="kp-lock-title" style="color:#00FF88;">Predicciones 16avos abiertas</p>
+                    <p class="kp-lock-body">Cada partido se cierra 1 minuto antes del inicio. Guarda tus picks con el botón al final del listado.</p>
+                </div>
+            </div>`;
+        } else {
+            notice.innerHTML = `<div class="kp-locked-notice">
+                <span style="font-size:1.5rem;line-height:1;">🔒</span>
+                <div>
+                    <p class="kp-lock-title">Predicciones bloqueadas</p>
+                    <p class="kp-lock-body">Se habilitarán el <strong>28 jun</strong> cuando finalice la Fase de Grupos.</p>
+                </div>
+            </div>`;
+        }
+    }
+
     function resolveSlot(slot) {
-        // "X° Grupo Y" → clasificado directo
         const gm = slot.match(/^(\d)°\s+Grupo\s+([A-L])$/);
         if (gm) {
             const pos = parseInt(gm[1]) - 1;
@@ -1834,7 +1915,6 @@ function renderKnockoutPredictions() {
             const played = s.reduce((acc, t) => acc + t.pj, 0) / 2;
             return { display: team.name, confirmed: played >= 6 };
         }
-        // "Mejor 3° (A/B/C/D/F)" → asignación greedy pre-calculada
         if (slot.startsWith('Mejor 3°')) {
             const q = slotMap[slot];
             if (!q) return null;
@@ -1863,7 +1943,56 @@ function renderKnockoutPredictions() {
         </div>`;
     }
 
-    function matchCard(m) {
+    // Card activa para R32 (inputs habilitados, lock por partido)
+    function matchCardR32(m) {
+        const locked     = isMatchLocked(m);
+        const liveResult = results.find(r => r.matchId === m.id);
+        const myPred     = myPreds.find(p => p.matchId === m.id);
+        const s1val      = myPred !== undefined ? myPred.score1 : '';
+        const s2val      = myPred !== undefined ? myPred.score2 : '';
+
+        // Badge de puntos si ya hay resultado
+        let ptsBadge = '';
+        if (liveResult && myPred !== undefined) {
+            const exact = myPred.score1 === liveResult.score1 && myPred.score2 === liveResult.score2;
+            const tend  = !exact && Math.sign(myPred.score1 - myPred.score2) === Math.sign(liveResult.score1 - liveResult.score2);
+            if (exact)     ptsBadge = `<span class="ko-pts exact">+3 ✓</span>`;
+            else if (tend) ptsBadge = `<span class="ko-pts tend">+1</span>`;
+            else           ptsBadge = `<span class="ko-pts miss">0</span>`;
+        }
+
+        let chip;
+        if (liveResult) {
+            chip = `<span class="kp-locked-chip kp-chip-result">⚽ ${liveResult.score1}–${liveResult.score2}</span>`;
+        } else if (locked) {
+            chip = `<span class="kp-locked-chip">🔒 CERRADO</span>`;
+        } else {
+            chip = `<span class="kp-locked-chip kp-chip-open">⏰ ${getTimeUntilLock(m)}</span>`;
+        }
+
+        const dis     = (locked || liveResult) ? 'disabled' : '';
+        const picked  = myPred !== undefined ? ' kp-r32-picked' : '';
+
+        return `
+        <div class="match-prediction${picked}">
+            <div class="kp-match-top">
+                <span class="match-info">P${m.id} · ${formatPETime(m.dateTime)}</span>
+                <div style="display:flex;gap:6px;align-items:center;">${ptsBadge}${chip}</div>
+            </div>
+            <div class="match-teams-row">
+                ${teamCell(m.slot1, false)}
+                <input type="number" id="score1-${m.id}" class="score-input" ${dis}
+                       min="0" max="20" placeholder="-" ${s1val !== '' ? `value="${s1val}"` : ''}>
+                <input type="number" id="score2-${m.id}" class="score-input" ${dis}
+                       min="0" max="20" placeholder="-" ${s2val !== '' ? `value="${s2val}"` : ''}>
+                ${teamCell(m.slot2, true)}
+            </div>
+            <div class="match-info kp-venue">📍 ${m.venue}</div>
+        </div>`;
+    }
+
+    // Card visual (rondas aún no abiertas)
+    function matchCardLocked(m) {
         return `
         <div class="match-prediction kp-pending">
             <div class="kp-match-top">
@@ -1880,13 +2009,17 @@ function renderKnockoutPredictions() {
         </div>`;
     }
 
+    // Contador de picks guardados en R32
+    const r32Saved   = round32Bracket.filter(m => myPreds.find(p => p.matchId === m.id)).length;
+    const r32Pending = round32Bracket.filter(m => !isMatchLocked(m) && !results.find(r => r.matchId === m.id)).length;
+
     const rounds = [
-        { key: 'r32',  icon: '🏆', title: 'Dieciseisavos de Final', subtitle: '16 partidos · 28 jun – 3 jul 2026',  startLabel: '29 JUN', mod: '',        bracket: round32Bracket },
-        { key: 'r16',  icon: '⚔️', title: 'Octavos de Final',       subtitle: '8 partidos · 4–7 jul 2026',          startLabel: '4 JUL',  mod: '--r16',   bracket: round16Bracket },
-        { key: 'qf',   icon: '🛡️', title: 'Cuartos de Final',       subtitle: '4 partidos · 9–11 jul 2026',         startLabel: '9 JUL',  mod: '--qf',    bracket: quarterFinalsBracket },
-        { key: 'sf',   icon: '🔥', title: 'Semifinales',             subtitle: '2 partidos · 14–15 jul 2026',        startLabel: '14 JUL', mod: '--sf',    bracket: semiFinalsBracket },
-        { key: '3rd',  icon: '🥉', title: 'Tercer Puesto',           subtitle: 'Hard Rock Stadium, Miami · 18 jul',  startLabel: '18 JUL', mod: '--3rd',   bracket: thirdPlaceBracket },
-        { key: 'fin',  icon: '🏆', title: 'Gran Final',              subtitle: 'MetLife Stadium, NJ · 19 jul 2026',  startLabel: '19 JUL', mod: '--final', bracket: finalBracket },
+        { key: 'r32',  icon: '🏆', title: 'Dieciseisavos de Final', subtitle: '16 partidos · 28 jun – 3 jul 2026',  startLabel: '28 JUN', mod: '',        bracket: round32Bracket,        active: true  },
+        { key: 'r16',  icon: '⚔️', title: 'Octavos de Final',       subtitle: '8 partidos · 4–7 jul 2026',          startLabel: '4 JUL',  mod: '--r16',   bracket: round16Bracket,        active: false },
+        { key: 'qf',   icon: '🛡️', title: 'Cuartos de Final',       subtitle: '4 partidos · 9–11 jul 2026',         startLabel: '9 JUL',  mod: '--qf',    bracket: quarterFinalsBracket,  active: false },
+        { key: 'sf',   icon: '🔥', title: 'Semifinales',             subtitle: '2 partidos · 14–15 jul 2026',        startLabel: '14 JUL', mod: '--sf',    bracket: semiFinalsBracket,     active: false },
+        { key: '3rd',  icon: '🥉', title: 'Tercer Puesto',           subtitle: 'Hard Rock Stadium, Miami · 18 jul',  startLabel: '18 JUL', mod: '--3rd',   bracket: thirdPlaceBracket,     active: false },
+        { key: 'fin',  icon: '🏆', title: 'Gran Final',              subtitle: 'MetLife Stadium, NJ · 19 jul 2026',  startLabel: '19 JUL', mod: '--final', bracket: finalBracket,          active: false },
     ];
 
     container.innerHTML = rounds.map(r => `
@@ -1907,10 +2040,74 @@ function renderKnockoutPredictions() {
                 </div>
             </div>
             <div class="kp-body" id="kp-body-${r.key}">
-                ${r.bracket.map(m => matchCard(m)).join('')}
+                ${r.active
+                    ? r.bracket.map(m => matchCardR32(m)).join('') +
+                      `<div class="kp-save-row">
+                          <button onclick="saveKnockoutPredictions()" class="kp-save-btn">💾 Guardar picks 16avos</button>
+                          <span class="kp-r32-status">${r32Saved} guardados · ${r32Pending} pendientes</span>
+                       </div>`
+                    : r.bracket.map(m => matchCardLocked(m)).join('')
+                }
             </div>
         </div>
     `).join('');
+}
+
+async function saveKnockoutPredictions() {
+    const name = document.getElementById('participantName').value.trim();
+    if (!name) { showToast('⚠️ Tu nombre no está cargado, recarga la página'); return; }
+
+    const newPreds = round32Bracket
+        .filter(m => {
+            if (isMatchLocked(m)) return false;
+            const s1 = document.getElementById(`score1-${m.id}`)?.value;
+            const s2 = document.getElementById(`score2-${m.id}`)?.value;
+            return s1 !== '' && s1 !== undefined && s2 !== '' && s2 !== undefined;
+        })
+        .map(m => ({
+            matchId: m.id,
+            score1: parseInt(document.getElementById(`score1-${m.id}`).value),
+            score2: parseInt(document.getElementById(`score2-${m.id}`).value)
+        }));
+
+    if (newPreds.length === 0) {
+        showToast('⚠️ Ingresa al menos 1 predicción de 16avos');
+        return;
+    }
+
+    const existing     = await storage.get(`participant:${name}`);
+    const existingPreds = existing?.predictions || [];
+
+    // Merge: actualizar si ya existe, agregar si no
+    const merged = [...existingPreds];
+    newPreds.forEach(np => {
+        const idx = merged.findIndex(p => p.matchId === np.matchId);
+        if (idx >= 0) merged[idx] = np;
+        else merged.push(np);
+    });
+
+    const participant = {
+        ...(existing || {}),
+        name,
+        username: sessionStorage.getItem('pollaUser'),
+        predictions: merged,
+        specialPredictions: existing?.specialPredictions || {},
+        createdAt: existing?.createdAt || Date.now(),
+        timestamp: Date.now()
+    };
+
+    await storage.set(`participant:${name}`, participant);
+
+    const idx = participants.findIndex(p => p.name === name);
+    if (idx >= 0) participants[idx] = participant;
+    else participants.push(participant);
+
+    logAction(sessionStorage.getItem('pollaUser'), 'save_predictions', { count: newPreds.length, phase: 'r32' });
+    renderKnockoutPredictions();
+    renderMyPredictions();
+    updateLeaderboard();
+    updateStats();
+    showToast(`✅ ${newPreds.length} pick(s) de 16avos guardados`);
 }
 
 function renderRound16()      { renderKnockoutRound(round16Bracket,      'round16Container'); }
