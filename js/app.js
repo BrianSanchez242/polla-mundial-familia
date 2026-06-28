@@ -1722,16 +1722,32 @@ function computeBestThirds(groupStandings) {
     const best8 = thirds.slice(0, 8);
     const allDone = completedGroups >= 12;
 
-    // Greedy: asigna cada slot al mejor tercero disponible de los grupos elegibles.
-    // Procesa en orden del bracket para que el resultado sea determinístico.
+    // Tabla oficial FIFA 2026: orden de prioridad de grupos por slot de mejor 3°.
+    // Fuente: bracket oficial confirmado en fase de grupos.
+    const FIFA_PRIORITY = {
+        'Mejor 3° (A/B/C/D/F)': ['D', 'B', 'A', 'C', 'F'],
+        'Mejor 3° (C/D/F/G/H)': ['F', 'G', 'H', 'C', 'D'],
+        'Mejor 3° (C/E/F/H/I)': ['E', 'I', 'C', 'F', 'H'],
+        'Mejor 3° (E/H/I/J/K)': ['K', 'J', 'I', 'E', 'H'],
+        'Mejor 3° (A/E/H/I/J)': ['I', 'J', 'A', 'E', 'H'],
+        'Mejor 3° (B/E/F/I/J)': ['B', 'J', 'E', 'F', 'I'],
+        'Mejor 3° (E/F/G/I/J)': ['G', 'J', 'E', 'F', 'I'],
+        'Mejor 3° (D/E/I/J/L)': ['L', 'J', 'D', 'E', 'I'],
+    };
+    const best8ByGroup = Object.fromEntries(best8.map(t => [t.group, t]));
     const assigned = new Set();
     const slotMap = {};
     round32Bracket.forEach(m => {
         [m.slot1, m.slot2].forEach(slot => {
             if (!slot.startsWith('Mejor 3°')) return;
-            const groups = slot.match(/\(([A-L/]+)\)/)?.[1].split('/') || [];
-            const q = best8.find(t => groups.includes(t.group) && !assigned.has(t.group));
-            if (q) { assigned.add(q.group); slotMap[slot] = q; }
+            const priority = FIFA_PRIORITY[slot] || slot.match(/\(([A-L/]+)\)/)?.[1].split('/') || [];
+            for (const grp of priority) {
+                if (best8ByGroup[grp] && !assigned.has(grp)) {
+                    assigned.add(grp);
+                    slotMap[slot] = best8ByGroup[grp];
+                    break;
+                }
+            }
         });
     });
 
