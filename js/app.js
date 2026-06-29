@@ -681,43 +681,44 @@ let matches = [];
 let participants = [];
 let results = [];
 let liveScores = {};
+let espnKnockoutTeams = {};
 let _livePollingInterval = null;
 let _topScorersCache = null;
 let _topScorersExpanded = false;
+
+const ESPN_TO_ES = {
+    'Mexico': 'México', 'South Africa': 'Sudáfrica',
+    'South Korea': 'Corea del Sur', 'Czechia': 'Chequia',
+    'Canada': 'Canadá', 'Bosnia-Herzegovina': 'Bosnia y Herzegovina',
+    'Switzerland': 'Suiza', 'Qatar': 'Qatar',
+    'United States': 'USA', 'Paraguay': 'Paraguay',
+    'Australia': 'Australia', 'Sweden': 'Suecia',
+    'Germany': 'Alemania', 'Curaçao': 'Curazao',
+    'Ivory Coast': 'Costa de Marfil', 'Ecuador': 'Ecuador',
+    'Netherlands': 'Países Bajos', 'Japan': 'Japón',
+    'New Zealand': 'Nueva Zelanda', 'Tunisia': 'Túnez',
+    'Belgium': 'Bélgica', 'Egypt': 'Egipto',
+    'Iran': 'Irán', 'Saudi Arabia': 'Arabia Saudita',
+    'Spain': 'España', 'Cape Verde': 'Cabo Verde',
+    'Uruguay': 'Uruguay', 'Haiti': 'Haití',
+    'France': 'Francia', 'Iraq': 'Iraq',
+    'Senegal': 'Senegal', 'Norway': 'Noruega',
+    'Argentina': 'Argentina', 'Algeria': 'Algeria',
+    'Austria': 'Austria', 'Jordan': 'Jordania',
+    'Uzbekistan': 'Uzbekistán', 'Panama': 'Panamá',
+    'Portugal': 'Portugal', 'Congo DR': 'Congo DR',
+    'England': 'Inglaterra', 'Croatia': 'Croacia',
+    'Ghana': 'Ghana',
+    'Morocco': 'Marruecos', 'Colombia': 'Colombia',
+    'Brazil': 'Brasil', 'Türkiye': 'Turquía',
+    'Scotland': 'Escocia',
+};
 
 function stripFlag(name) {
     return name.replace(/^[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]+/, '').trim();
 }
 
 async function fetchLiveScores() {
-    const ESPN_TO_ES = {
-        'Mexico': 'México', 'South Africa': 'Sudáfrica',
-        'South Korea': 'Corea del Sur', 'Czechia': 'Chequia',
-        'Canada': 'Canadá', 'Bosnia-Herzegovina': 'Bosnia y Herzegovina',
-        'Switzerland': 'Suiza', 'Qatar': 'Qatar',
-        'United States': 'USA', 'Paraguay': 'Paraguay',
-        'Australia': 'Australia', 'Sweden': 'Suecia',
-        'Germany': 'Alemania', 'Curaçao': 'Curazao',
-        'Ivory Coast': 'Costa de Marfil', 'Ecuador': 'Ecuador',
-        'Netherlands': 'Países Bajos', 'Japan': 'Japón',
-        'New Zealand': 'Nueva Zelanda', 'Tunisia': 'Túnez',
-        'Belgium': 'Bélgica', 'Egypt': 'Egipto',
-        'Iran': 'Irán', 'Saudi Arabia': 'Arabia Saudita',
-        'Spain': 'España', 'Cape Verde': 'Cabo Verde',
-        'Uruguay': 'Uruguay', 'Haiti': 'Haití',
-        'France': 'Francia', 'Iraq': 'Iraq',
-        'Senegal': 'Senegal', 'Norway': 'Noruega',
-        'Argentina': 'Argentina', 'Algeria': 'Algeria',
-        'Austria': 'Austria', 'Jordan': 'Jordania',
-        'Uzbekistan': 'Uzbekistán', 'Panama': 'Panamá',
-        'Portugal': 'Portugal', 'Congo DR': 'Congo DR',
-        'England': 'Inglaterra', 'Croatia': 'Croacia',
-        'Ghana': 'Ghana',
-        'Morocco': 'Marruecos', 'Colombia': 'Colombia',
-        'Brazil': 'Brasil', 'Türkiye': 'Turquía',
-        'Scotland': 'Escocia',
-    };
-
     try {
         const res = await fetch(
             'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?limit=200&dates=20260611-20260719'
@@ -795,6 +796,60 @@ function startLivePolling() {
     if (_livePollingInterval) clearInterval(_livePollingInterval);
     fetchLiveScores();
     _livePollingInterval = setInterval(fetchLiveScores, 60000);
+}
+
+async function fetchESPNKnockoutBracket() {
+    // Venue key (before comma, lowercase) → bracket entries
+    const venueEntries = {};
+    round32Bracket.forEach(m => {
+        const vk = m.venue.split(',')[0].trim().toLowerCase().replace(/['']/g, "'");
+        if (!venueEntries[vk]) venueEntries[vk] = [];
+        venueEntries[vk].push(m);
+    });
+
+    // Stripped name → full name with flag (from defaultMatches)
+    const nameToFull = {};
+    defaultMatches.forEach(m => {
+        [m.team1, m.team2].forEach(t => { nameToFull[stripFlag(t)] = t; });
+    });
+
+    try {
+        const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260628-20260703&limit=50');
+        if (!res.ok) return;
+        const data = await res.json();
+        for (const event of data.events || []) {
+            const comp = event.competitions?.[0];
+            if (!comp) continue;
+            const home = comp.competitors?.find(c => c.homeAway === 'home');
+            const away = comp.competitors?.find(c => c.homeAway === 'away');
+            if (!home || !away) continue;
+            const homeEs = ESPN_TO_ES[home.team.displayName];
+            const awayEs = ESPN_TO_ES[away.team.displayName];
+            if (!homeEs || !awayEs) continue;
+
+            const espnVenue = (comp.venue?.fullName || '').toLowerCase().replace(/['']/g, "'");
+            let bracket = null;
+            for (const [vk, entries] of Object.entries(venueEntries)) {
+                if (!espnVenue.includes(vk)) continue;
+                if (entries.length === 1) {
+                    bracket = entries[0];
+                } else {
+                    const espnTime = new Date(event.date).getTime();
+                    bracket = entries.reduce((best, e) => {
+                        const d = Math.abs(espnTime - new Date(e.dateTime).getTime());
+                        const bd = best ? Math.abs(espnTime - new Date(best.dateTime).getTime()) : Infinity;
+                        return d < bd ? e : best;
+                    }, null);
+                }
+                break;
+            }
+            if (!bracket) continue;
+            espnKnockoutTeams[bracket.id] = {
+                team1: nameToFull[homeEs] || homeEs,
+                team2: nameToFull[awayEs] || awayEs,
+            };
+        }
+    } catch (e) { console.warn('fetchESPNKnockoutBracket:', e); }
 }
 
 function stopLivePolling() {
@@ -1100,6 +1155,9 @@ async function init() {
         results = savedResults || [];
     }
 
+    // Cargar equipos del R32 desde ESPN (más confiable que calcular desde standings)
+    await fetchESPNKnockoutBracket();
+
     renderMatches();
     renderLiveBar();
     renderMyPredictions();
@@ -1230,8 +1288,9 @@ function renderMyPredictions() {
         html += `<h4 style="color:var(--primary); margin:24px 0 8px; font-size:0.95rem; letter-spacing:1px;">🏆 DIECISEISAVOS DE FINAL</h4>`;
         r32Preds.forEach(({ match: m, pred }) => {
             const result = results.find(r => r.matchId === m.id);
-            const t1 = resolveSlotName(m.slot1);
-            const t2 = resolveSlotName(m.slot2);
+            const espn = espnKnockoutTeams[m.id];
+            const t1 = espn ? espn.team1 : resolveSlotName(m.slot1);
+            const t2 = espn ? espn.team2 : resolveSlotName(m.slot2);
             let pointsBadge = '';
             if (result) {
                 const isExact = pred.score1 === result.score1 && pred.score2 === result.score2;
@@ -1807,7 +1866,11 @@ function getAllMatchesWithTeams() {
     ];
     return [
         ...matches,
-        ...allBrackets.map(m => ({ ...m, team1: resolveSlotName(m.slot1), team2: resolveSlotName(m.slot2) }))
+        ...allBrackets.map(m => {
+            const espn = espnKnockoutTeams[m.id];
+            if (espn) return { ...m, team1: espn.team1, team2: espn.team2 };
+            return { ...m, team1: resolveSlotName(m.slot1), team2: resolveSlotName(m.slot2) };
+        })
     ];
 }
 
@@ -1863,10 +1926,16 @@ function renderRound32() {
                         timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hour12: true
                     });
                     const isPast = new Date(m.dateTime) < new Date();
+                    const espnData = espnKnockoutTeams[m.id];
 
-                    function teamBlock(slot) {
-                        const resolved = resolveSlot(slot);
+                    function teamBlock(slot, espnFull) {
                         const label = `<span class="r32-slot-pos">${slot}</span>`;
+                        if (espnFull) {
+                            const name = stripFlag(espnFull);
+                            const flag = espnFull.replace(name, '').trim();
+                            return `<div class="r32-team-block">${label}<span class="r32-team-name">${flag} ${name}</span><span class="r32-badge confirmed">✓ CLASIF.</span></div>`;
+                        }
+                        const resolved = resolveSlot(slot);
                         if (!resolved) return `<div class="r32-team-block">${label}<span class="r32-team-name tbd">POR DEFINIR</span></div>`;
                         const badge = resolved.confirmed
                             ? `<span class="r32-badge confirmed">✓ CLASIF.</span>`
@@ -1878,9 +1947,9 @@ function renderRound32() {
                     <div class="r32-match-card ${isPast ? 'r32-played' : ''}">
                         <div class="r32-match-id">Partido ${m.id}</div>
                         <div class="r32-teams-col">
-                            ${teamBlock(m.slot1)}
+                            ${teamBlock(m.slot1, espnData?.team1)}
                             <span class="r32-vs">vs</span>
-                            ${teamBlock(m.slot2)}
+                            ${teamBlock(m.slot2, espnData?.team2)}
                         </div>
                         <div class="r32-meta">
                             <span>🕐 ${timePE} PE</span>
@@ -2018,8 +2087,9 @@ function renderKnockoutPredictions() {
 
     // Card de partido — mismo comportamiento que Fase de Grupos
     function matchCard(m, active) {
-        const r1 = resolveSlot(m.slot1);
-        const r2 = resolveSlot(m.slot2);
+        const espn = espnKnockoutTeams[m.id];
+        const r1 = espn ? { display: espn.team1, confirmed: true } : resolveSlot(m.slot1);
+        const r2 = espn ? { display: espn.team2, confirmed: true } : resolveSlot(m.slot2);
         const team1Name = r1 ? r1.display : m.slot1.replace('Mejor 3° ', '3° ');
         const team2Name = r2 ? r2.display : m.slot2.replace('Mejor 3° ', '3° ');
 
