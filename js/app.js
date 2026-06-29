@@ -1850,15 +1850,65 @@ function getAllMatchesWithTeams() {
     const groupStandings = computeGroupStandings();
     const { slotMap } = computeBestThirds(groupStandings);
 
-    function resolveSlotName(slot) {
+    // Mapa acumulativo: matchId → {team1, team2}
+    const resolved = {};
+    matches.forEach(m => { resolved[m.id] = { team1: m.team1, team2: m.team2 }; });
+
+    // Resuelve slots de fase de grupos / mejores terceros
+    function resolveGroupSlot(slot) {
         const gm = slot.match(/^(\d)°\s+Grupo\s+([A-L])$/);
         if (gm) {
             const s = groupStandings[gm[2]];
             return s?.[parseInt(gm[1]) - 1]?.name ?? slot;
         }
         if (slot.startsWith('Mejor 3°')) return slotMap[slot]?.name ?? slot;
-        return slot; // "Gan. PXX" para R16+
+        return slot;
     }
+
+    // Capa 2: R32
+    round32Bracket.forEach(m => {
+        const espn = espnKnockoutTeams[m.id];
+        resolved[m.id] = espn
+            ? { team1: espn.team1, team2: espn.team2 }
+            : { team1: resolveGroupSlot(m.slot1), team2: resolveGroupSlot(m.slot2) };
+    });
+
+    // Ganador / perdedor de un partido ya resuelto
+    function getWinner(matchId) {
+        const r = results.find(r => r.matchId === matchId);
+        const m = resolved[matchId];
+        if (!r || !m) return null;
+        if (r.score1 > r.score2) return m.team1;
+        if (r.score1 < r.score2) return m.team2;
+        return null;
+    }
+    function getLoser(matchId) {
+        const r = results.find(r => r.matchId === matchId);
+        const m = resolved[matchId];
+        if (!r || !m) return null;
+        if (r.score1 > r.score2) return m.team2;
+        if (r.score1 < r.score2) return m.team1;
+        return null;
+    }
+    function resolveKOSlot(slot) {
+        const ganM = slot.match(/^Gan\. P(\d+)$/);
+        if (ganM) return getWinner(parseInt(ganM[1])) ?? slot;
+        const perdM = slot.match(/^Perd\. P(\d+)$/);
+        if (perdM) return getLoser(parseInt(perdM[1])) ?? slot;
+        return slot;
+    }
+
+    // Capas 3+: R16 → QF → SF → 3er lugar → Final (en orden para cascada de ganadores)
+    const koLayers = [
+        ...round16Bracket, ...quarterFinalsBracket,
+        ...semiFinalsBracket, ...thirdPlaceBracket, ...finalBracket
+    ];
+    koLayers.forEach(m => {
+        const espn = espnKnockoutTeams[m.id];
+        resolved[m.id] = espn
+            ? { team1: espn.team1, team2: espn.team2 }
+            : { team1: resolveKOSlot(m.slot1), team2: resolveKOSlot(m.slot2) };
+    });
 
     const allBrackets = [
         ...round32Bracket, ...round16Bracket, ...quarterFinalsBracket,
@@ -1866,11 +1916,7 @@ function getAllMatchesWithTeams() {
     ];
     return [
         ...matches,
-        ...allBrackets.map(m => {
-            const espn = espnKnockoutTeams[m.id];
-            if (espn) return { ...m, team1: espn.team1, team2: espn.team2 };
-            return { ...m, team1: resolveSlotName(m.slot1), team2: resolveSlotName(m.slot2) };
-        })
+        ...allBrackets.map(m => ({ ...m, ...resolved[m.id] }))
     ];
 }
 
@@ -1966,6 +2012,11 @@ function renderKnockoutRound(bracket, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
+    // Resolver team1/team2 reales para este bracket
+    const allWithTeams = getAllMatchesWithTeams();
+    const teamsByMatchId = {};
+    allWithTeams.forEach(m => { teamsByMatchId[m.id] = { team1: m.team1, team2: m.team2 }; });
+
     const byDay = {};
     bracket.forEach(m => {
         const dayKey = new Date(m.dateTime).toLocaleDateString('es-PE', {
@@ -1986,19 +2037,31 @@ function renderKnockoutRound(bracket, containerId) {
                         timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hour12: true
                     });
                     const isPast = new Date(m.dateTime) < new Date();
-                    const teamBlock = slot => `
-                        <div class="r32-team-block">
-                            <span class="r32-slot-pos">${slot}</span>
-                            <span class="r32-team-name tbd">POR DEFINIR</span>
-                        </div>`;
+                    const result = results.find(r => r.matchId === m.id);
+                    const teams = teamsByMatchId[m.id] || {};
+
+                    function teamBlock(slot, teamFull) {
+                        const label = `<span class="r32-slot-pos">${slot}</span>`;
+                        const isResolved = teamFull && !teamFull.startsWith('Gan.') && !teamFull.startsWith('Perd.');
+                        if (!isResolved) return `<div class="r32-team-block">${label}<span class="r32-team-name tbd">POR DEFINIR</span></div>`;
+                        const name = stripFlag(teamFull);
+                        const flag = teamFull.replace(name, '').trim();
+                        return `<div class="r32-team-block">${label}<span class="r32-team-name">${flag} ${name}</span><span class="r32-badge confirmed">✓ CLASIF.</span></div>`;
+                    }
+
+                    const resultBadge = result
+                        ? `<div style="text-align:center;margin:4px 0;"><span style="background:rgba(0,217,255,0.1);border:1px solid #00D9FF;color:#00D9FF;padding:3px 12px;border-radius:10px;font-size:0.85rem;font-weight:700;">✅ ${result.score1} - ${result.score2} · FINAL</span></div>`
+                        : '';
+
                     return `
                     <div class="r32-match-card ${isPast ? 'r32-played' : ''}">
                         <div class="r32-match-id">Partido ${m.id}</div>
                         <div class="r32-teams-col">
-                            ${teamBlock(m.slot1)}
-                            <span class="r32-vs">vs</span>
-                            ${teamBlock(m.slot2)}
+                            ${teamBlock(m.slot1, teams.team1)}
+                            <span class="r32-vs">${result ? `${result.score1} - ${result.score2}` : 'vs'}</span>
+                            ${teamBlock(m.slot2, teams.team2)}
                         </div>
+                        ${resultBadge}
                         <div class="r32-meta">
                             <span>🕐 ${timePE} PE</span>
                             <span>📍 ${m.venue}</span>
