@@ -2521,7 +2521,7 @@ function showTodayMatches() {
     const todayStr = toDateStr(nowPE);
     const tomorrowStr = toDateStr(tomorrowPE);
 
-    const todayMatches = matches.filter(m => {
+    const todayMatches = getAllMatchesWithTeams().filter(m => {
         if (!m.dateTime) return false;
         const matchPE = new Date(new Date(m.dateTime).toLocaleString('en-US', { timeZone: 'America/Lima' }));
         const matchStr = toDateStr(matchPE);
