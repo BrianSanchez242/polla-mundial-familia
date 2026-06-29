@@ -725,6 +725,7 @@ async function fetchLiveScores() {
 
         const STATUS_RANK = { 'FINISHED': 4, 'IN_PLAY': 3, 'PAUSED': 2, 'TIMED': 0, 'SCHEDULED': 0 };
         let changed = false;
+        const allMatchesWithTeams = getAllMatchesWithTeams();
 
         for (const event of events) {
             const comp = event.competitions?.[0];
@@ -760,11 +761,12 @@ async function fetchLiveScores() {
 
             // Auto-guardar resultados finales con patrón individual (result:matchId)
             if (ourStatus === 'FINISHED') {
-                const internalMatch = matches.find(m =>
+                const internalMatch = allMatchesWithTeams.find(m =>
                     stripFlag(m.team1) === homeEs && stripFlag(m.team2) === awayEs
                 );
+                if (!internalMatch) continue;
                 const kickoff = new Date(internalMatch.dateTime);
-                if (internalMatch && new Date() >= kickoff && !results.find(r => r.matchId === internalMatch.id)) {
+                if (new Date() >= kickoff && !results.find(r => r.matchId === internalMatch.id)) {
                     results.push({ matchId: internalMatch.id, score1: homeScore, score2: awayScore });
                     await storage.set(`result:${internalMatch.id}`, { matchId: internalMatch.id, score1: homeScore, score2: awayScore });
                     changed = true;
@@ -1446,7 +1448,7 @@ function renderResults() {
     const saveBtn = document.getElementById('saveResultsBtn');
     if (saveBtn) saveBtn.style.display = isAdmin ? 'block' : 'none';
 
-    container.innerHTML = matches.map(match => {
+    container.innerHTML = getAllMatchesWithTeams().map(match => {
         const result = results.find(r => r.matchId === match.id);
         const score1 = result ? result.score1 : '';
         const score2 = result ? result.score2 : '';
@@ -1571,7 +1573,7 @@ async function submitPredictions() {
 // Guardar resultados reales → una clave por partido en polla_data (result:matchId)
 // Nunca se puede borrar un resultado de otro partido accidentalmente
 async function saveResults() {
-    const inputResults = matches.map(match => {
+    const inputResults = getAllMatchesWithTeams().map(match => {
         const score1Input = document.getElementById(`result1-${match.id}`);
         const score2Input = document.getElementById(`result2-${match.id}`);
         const score1 = score1Input?.value !== '' ? parseInt(score1Input.value) : null;
@@ -1777,6 +1779,31 @@ function computeBestThirds(groupStandings) {
     });
 
     return { best8, allDone, slotMap };
+}
+
+// Devuelve todos los partidos (grupos + eliminatorios) con team1/team2 resueltos
+function getAllMatchesWithTeams() {
+    const groupStandings = computeGroupStandings();
+    const { slotMap } = computeBestThirds(groupStandings);
+
+    function resolveSlotName(slot) {
+        const gm = slot.match(/^(\d)°\s+Grupo\s+([A-L])$/);
+        if (gm) {
+            const s = groupStandings[gm[2]];
+            return s?.[parseInt(gm[1]) - 1]?.name ?? slot;
+        }
+        if (slot.startsWith('Mejor 3°')) return slotMap[slot]?.name ?? slot;
+        return slot; // "Gan. PXX" para R16+
+    }
+
+    const allBrackets = [
+        ...round32Bracket, ...round16Bracket, ...quarterFinalsBracket,
+        ...semiFinalsBracket, ...thirdPlaceBracket, ...finalBracket
+    ];
+    return [
+        ...matches,
+        ...allBrackets.map(m => ({ ...m, team1: resolveSlotName(m.slot1), team2: resolveSlotName(m.slot2) }))
+    ];
 }
 
 // Dieciseisavos de Final — bracket oficial FIFA 2026
@@ -2220,7 +2247,7 @@ function renderAllPicks() {
 
     try {
     const now = new Date();
-    const eligible = matches
+    const eligible = getAllMatchesWithTeams()
         .filter(m => new Date(m.dateTime).getTime() < now.getTime())
         .sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
 
