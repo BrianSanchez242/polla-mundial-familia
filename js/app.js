@@ -682,6 +682,8 @@ let participants = [];
 let results = [];
 let liveScores = {};
 let _livePollingInterval = null;
+let _topScorersCache = null;
+let _topScorersExpanded = false;
 
 function stripFlag(name) {
     return name.replace(/^[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]+/, '').trim();
@@ -2359,6 +2361,91 @@ function renderAllPicks() {
     }
 }
 
+// ── Goleadores del Mundial ────────────────────────────────────────────────────
+function _codeToFlag(code) {
+    const map = {
+        'ARG':'AR','BRA':'BR','FRA':'FR','ESP':'ES','GER':'DE','POR':'PT',
+        'NED':'NL','BEL':'BE','MEX':'MX','USA':'US','CAN':'CA','AUS':'AU',
+        'JPN':'JP','KOR':'KR','URU':'UY','COL':'CO','ECU':'EC','SEN':'SN',
+        'MAR':'MA','GHA':'GH','EGY':'EG','NOR':'NO','SWE':'SE','AUT':'AT',
+        'CHE':'CH','CZE':'CZ','HRV':'HR','TUR':'TR','IRN':'IR','IRQ':'IQ',
+        'SAU':'SA','QAT':'QA','PAR':'PY','PAN':'PA','HTI':'HT','NZL':'NZ',
+        'TUN':'TN','DZA':'DZ','ZAF':'ZA','UZB':'UZ','JOR':'JO','COD':'CD',
+        'CPV':'CV','BIH':'BA','ENG':'GB','SCO':'GB','CMR':'CM',
+    };
+    const iso2 = map[code.toUpperCase()] || (code.length === 2 ? code.toUpperCase() : null);
+    if (!iso2) return code;
+    return [...iso2.toUpperCase()].map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('');
+}
+
+function _displayScorers(container, players) {
+    const medals = ['🥇', '🥈', '🥉'];
+    const visible = _topScorersExpanded ? players : players.slice(0, 3);
+    const rows = visible.map((p, i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span style="font-size:1rem;min-width:26px;text-align:center;">${i < 3 ? medals[i] : `${i + 1}.`}</span>
+            <span style="font-size:1.1rem;">${p.flag}</span>
+            <span style="flex:1;font-weight:600;font-size:0.95rem;">${p.name}</span>
+            <span style="font-weight:700;color:var(--primary);font-size:1rem;">${p.goals} ⚽</span>
+        </div>`).join('');
+
+    const btn = players.length > 3
+        ? `<button onclick="toggleTopScorers()" style="margin-top:12px;background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-dim);padding:6px 16px;border-radius:8px;cursor:pointer;font-size:0.82rem;width:100%;">
+               ${_topScorersExpanded ? 'Ver menos ▲' : `Ver todos (${players.length}) ▼`}
+           </button>`
+        : '';
+    container.innerHTML = rows + btn;
+}
+
+async function renderTopScorers() {
+    const container = document.getElementById('topScorersContent');
+    if (!container) return;
+
+    if (_topScorersCache) { _displayScorers(container, _topScorersCache); return; }
+
+    container.innerHTML = `<p style="color:var(--text-dim);text-align:center;padding:16px;font-size:0.9rem;">Cargando goleadores...</p>`;
+    try {
+        const res = await fetch('https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/seasons/2026/types/1/leaders');
+        if (!res.ok) throw new Error('api');
+        const data = await res.json();
+
+        const cat = (data.categories || []).find(c =>
+            (c.name || '').toLowerCase().includes('goal') ||
+            (c.displayName || '').toLowerCase().includes('goal') ||
+            c.abbreviation === 'G'
+        );
+        const leaders = (cat?.leaders || []).slice(0, 10);
+        if (!leaders.length) throw new Error('empty');
+
+        const players = (await Promise.all(leaders.map(async leader => {
+            const goals = Number(leader.value ?? leader.displayValue ?? 0);
+            let url = (leader.athlete?.$ref || '').replace('http://', 'https://');
+            if (!url) return null;
+            try {
+                const ar = await fetch(url);
+                const a  = await ar.json();
+                const name    = a.fullName || a.displayName || '?';
+                const flagUrl = a.flag?.href || '';
+                const m       = flagUrl.match(/\/([a-z]{2,3})\.png$/i);
+                const flag    = m ? _codeToFlag(m[1]) : '';
+                return { name, goals, flag };
+            } catch { return null; }
+        }))).filter(Boolean);
+
+        if (!players.length) throw new Error('no players');
+        _topScorersCache = players;
+        _displayScorers(container, players);
+    } catch {
+        container.innerHTML = `<p style="color:var(--text-dim);text-align:center;padding:16px;font-size:0.9rem;">No disponible por el momento.</p>`;
+    }
+}
+
+function toggleTopScorers() {
+    _topScorersExpanded = !_topScorersExpanded;
+    const container = document.getElementById('topScorersContent');
+    if (container && _topScorersCache) _displayScorers(container, _topScorersCache);
+}
+
 // Actualizar estadísticas
 function updateStats() {
     const username = sessionStorage.getItem('pollaUser');
@@ -2379,6 +2466,7 @@ function updateStats() {
 
     renderCharts(displayName);
     renderAllPicks();
+    renderTopScorers();
 }
 
 // Renderizar gráficos
