@@ -266,7 +266,6 @@ function showLoginError(message) {
 async function showMainApp() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('logoutBtn').style.display = 'block';
-    startLivePolling();
 
     // Ocultar logo al hacer scroll, mostrar al volver arriba
     const brandLogo = document.querySelector('.brand-logo');
@@ -306,7 +305,8 @@ async function showMainApp() {
         lockParticipantName(savedName);
         applyRoleUI(username);
         document.getElementById('mainApp').style.display = 'block';
-        init();
+        await init();
+        startLivePolling();
     }
 }
 
@@ -348,7 +348,8 @@ async function confirmDisplayName() {
     lockParticipantName(name);
     applyRoleUI(username);
     document.getElementById('mainApp').style.display = 'block';
-    init();
+    await init();
+    startLivePolling();
 }
 
 function showToast(msg, duration = 3000) {
