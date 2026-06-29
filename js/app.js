@@ -806,7 +806,7 @@ function renderLiveBar() {
     const now = new Date();
     const todayPE = now.toLocaleDateString('es-PE', { timeZone: 'America/Lima' });
 
-    const todayMatches = matches
+    const todayMatches = getAllMatchesWithTeams()
         .filter(m => new Date(m.dateTime).toLocaleDateString('es-PE', { timeZone: 'America/Lima' }) === todayPE)
         .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
