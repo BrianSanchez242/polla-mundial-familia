@@ -2055,15 +2055,6 @@ function renderKnockoutPredictions() {
                 ? '<span class="match-status-locked">🔒 CERRADO</span>'
                 : `<span class="match-status-open${urgentKO ? ' match-closing-soon' : ''}">⏰ ${getTimeUntilLock(m)}</span>`;
 
-        let ptsBadge = '';
-        if (liveResult && myPred !== undefined) {
-            const exact = myPred.score1 === liveResult.score1 && myPred.score2 === liveResult.score2;
-            const tend  = !exact && Math.sign(myPred.score1 - myPred.score2) === Math.sign(liveResult.score1 - liveResult.score2);
-            if (exact)     ptsBadge = '<span class="ko-pts exact">+3 ✓</span>';
-            else if (tend) ptsBadge = '<span class="ko-pts tend">+1</span>';
-            else           ptsBadge = '<span class="ko-pts miss">0</span>';
-        }
-
         // Live badge — igual que Fase de Grupos
         const liveKey = r1 && r2 ? `${stripFlag(r1.display)}|${stripFlag(r2.display)}` : null;
         const live = liveKey ? liveScores[liveKey] : null;
@@ -2089,7 +2080,7 @@ function renderKnockoutPredictions() {
         <div class="match-prediction ${lockedClass} ${pickedClass}" id="match-card-${m.id}">
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
                 <span class="match-info" style="margin:0;">P${m.id} · ${formatPETime(m.dateTime)}</span>
-                ${statusBadge}${ptsBadge}${liveBadge}
+                ${statusBadge}${liveBadge}
                 <span class="match-info" style="margin:0 0 0 auto;white-space:nowrap;">📍 ${m.venue}</span>
             </div>
             <div class="match-teams-row">
