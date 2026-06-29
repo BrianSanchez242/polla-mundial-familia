@@ -2367,10 +2367,10 @@ function _codeToFlag(code) {
         'ARG':'AR','BRA':'BR','FRA':'FR','ESP':'ES','GER':'DE','POR':'PT',
         'NED':'NL','BEL':'BE','MEX':'MX','USA':'US','CAN':'CA','AUS':'AU',
         'JPN':'JP','KOR':'KR','URU':'UY','COL':'CO','ECU':'EC','SEN':'SN',
-        'MAR':'MA','GHA':'GH','EGY':'EG','NOR':'NO','SWE':'SE','AUT':'AT',
+        'MAR':'MA','MOR':'MA','GHA':'GH','EGY':'EG','NOR':'NO','SWE':'SE','AUT':'AT',
         'CHE':'CH','CZE':'CZ','HRV':'HR','TUR':'TR','IRN':'IR','IRQ':'IQ',
         'SAU':'SA','QAT':'QA','PAR':'PY','PAN':'PA','HTI':'HT','NZL':'NZ',
-        'TUN':'TN','DZA':'DZ','ZAF':'ZA','UZB':'UZ','JOR':'JO','COD':'CD',
+        'TUN':'TN','DZA':'DZ','ZAF':'ZA','UZB':'UZ','JOR':'JO','COD':'CD','RDC':'CD',
         'CPV':'CV','BIH':'BA','ENG':'GB','SCO':'GB','CMR':'CM',
     };
     const iso2 = map[code.toUpperCase()] || (code.length === 2 ? code.toUpperCase() : null);
