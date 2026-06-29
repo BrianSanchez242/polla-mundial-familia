@@ -1311,9 +1311,11 @@ function renderMatches() {
                 const mPE = new Date(new Date(m.dateTime).toLocaleString('en-US', { timeZone: 'America/Lima' }));
                 const mDayStr = toDS(mPE);
                 const isToday = mDayStr === todayStr;
+                const msLeftB = new Date(m.dateTime) - new Date();
+                const urgentB = !hasPick && msLeftB > 0 && msLeftB <= 12 * 60 * 60 * 1000;
                 const rightSide = hasPick
                     ? `<span style="color:#00FF88;font-weight:700;white-space:nowrap;">✅ PICK</span>`
-                    : `<span style="font-weight:700;white-space:nowrap;">⏰ ${getTimeUntilLock(m)}</span>`;
+                    : `<span style="font-weight:700;white-space:nowrap;${urgentB ? 'color:#FF4444;' : ''}">⏰ ${getTimeUntilLock(m)}</span>`;
 
                 let separator = '';
                 if (mDayStr !== lastDayBanner) {
@@ -1386,7 +1388,7 @@ function renderMatches() {
                     const disabledAttr = locked ? 'disabled' : '';
                     const savedResult = results.find(r => r.matchId === match.id);
                     const msLeft = new Date(match.dateTime) - new Date();
-                    const closingSoon = !locked && !savedResult && msLeft > 0 && msLeft < 48 * 60 * 60 * 1000;
+                    const closingSoon = !locked && !savedPred && msLeft > 0 && msLeft <= 12 * 60 * 60 * 1000;
 
                     const val1 = savedPred ? savedPred.score1 : '';
                     const val2 = savedPred ? savedPred.score2 : '';
@@ -2045,11 +2047,13 @@ function renderKnockoutPredictions() {
         const s1val = myPred !== undefined ? myPred.score1 : '';
         const s2val = myPred !== undefined ? myPred.score2 : '';
 
+        const msLeftKO = new Date(m.dateTime) - new Date();
+        const urgentKO = !lockedByUser && msLeftKO > 0 && msLeftKO <= 12 * 60 * 60 * 1000;
         const statusBadge = lockedByUser
             ? '<span class="match-status-locked">🔒 TU PICK</span>'
             : (lockedByTime || liveResult)
                 ? '<span class="match-status-locked">🔒 CERRADO</span>'
-                : `<span class="match-status-open">⏰ ${getTimeUntilLock(m)}</span>`;
+                : `<span class="match-status-open${urgentKO ? ' match-closing-soon' : ''}">⏰ ${getTimeUntilLock(m)}</span>`;
 
         let ptsBadge = '';
         if (liveResult && myPred !== undefined) {
@@ -2552,12 +2556,16 @@ function showTodayMatches() {
         const matchDayStr = toDateStr(new Date(new Date(match.dateTime).toLocaleString('en-US', { timeZone: 'America/Lima' })));
         const isToday = matchDayStr === todayStr;
 
+        const msLeftModal = new Date(match.dateTime) - new Date();
+        const urgentModal = !hasPick && msLeftModal > 0 && msLeftModal <= 12 * 60 * 60 * 1000;
         const statusBadge = locked
             ? `<span style="background:rgba(255,51,102,0.15); color:#FF3366; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600;">🔒 CERRADO</span>`
             : hasPick
                 ? `<span style="background:rgba(0,255,136,0.12); color:#00FF88; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600;">✅ PICK</span>`
                 : timeInfo
-                    ? `<span style="background:rgba(0,217,255,0.1); color:#00D9FF; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600;">⏰ ${timeInfo}</span>`
+                    ? urgentModal
+                        ? `<span style="background:rgba(255,68,68,0.15); color:#FF4444; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600;">⏰ ${timeInfo}</span>`
+                        : `<span style="background:rgba(0,217,255,0.1); color:#00D9FF; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600;">⏰ ${timeInfo}</span>`
                     : '';
 
         let separator = '';
