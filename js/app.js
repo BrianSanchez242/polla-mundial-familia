@@ -622,7 +622,7 @@ const round32Bracket = [
     // ── 30 de junio ─────────────────────────────────────────────────────────
     { id: 78, dateTime: '2026-06-30T12:00:00-05:00', venue: 'AT&T Stadium, Arlington (TX)',             slot1: '2° Grupo E', slot2: '2° Grupo I' },
     { id: 77, dateTime: '2026-06-30T16:00:00-05:00', venue: 'MetLife Stadium, East Rutherford (NJ)',    slot1: '1° Grupo I', slot2: 'Mejor 3° (C/D/F/G/H)' },
-    { id: 79, dateTime: '2026-06-30T20:00:00-05:00', venue: 'Estadio Azteca, Ciudad de México',        slot1: '1° Grupo A', slot2: 'Mejor 3° (C/E/F/H/I)' },
+    { id: 79, dateTime: '2026-06-30T20:00:00-05:00', venue: 'Estadio Banorte, Ciudad de México',        slot1: '1° Grupo A', slot2: 'Mejor 3° (C/E/F/H/I)' },
     // ── 1 de julio ──────────────────────────────────────────────────────────
     { id: 80, dateTime: '2026-07-01T11:00:00-05:00', venue: 'Mercedes-Benz Stadium, Atlanta (GA)',      slot1: '1° Grupo L', slot2: 'Mejor 3° (E/H/I/J/K)' },
     { id: 82, dateTime: '2026-07-01T15:00:00-05:00', venue: 'Lumen Field, Seattle (WA)',               slot1: '1° Grupo G', slot2: 'Mejor 3° (A/E/H/I/J)' },
@@ -643,7 +643,7 @@ const round16Bracket = [
     { id: 89, dateTime: '2026-07-04T16:00:00-05:00', venue: 'Lincoln Financial Field, Philadelphia (PA)', slot1: 'Gan. P74', slot2: 'Gan. P77' },
     // ── 5 de julio ──────────────────────────────────────────────────────────
     { id: 91, dateTime: '2026-07-05T15:00:00-05:00', venue: 'MetLife Stadium, East Rutherford (NJ)',      slot1: 'Gan. P76', slot2: 'Gan. P78' },
-    { id: 92, dateTime: '2026-07-05T19:00:00-05:00', venue: 'Estadio Azteca, Ciudad de México',          slot1: 'Gan. P79', slot2: 'Gan. P80' },
+    { id: 92, dateTime: '2026-07-05T19:00:00-05:00', venue: 'Estadio Banorte, Ciudad de México',          slot1: 'Gan. P79', slot2: 'Gan. P80' },
     // ── 6 de julio ──────────────────────────────────────────────────────────
     { id: 93, dateTime: '2026-07-06T14:00:00-05:00', venue: 'AT&T Stadium, Arlington (TX)',              slot1: 'Gan. P83', slot2: 'Gan. P84' },
     { id: 94, dateTime: '2026-07-06T19:00:00-05:00', venue: 'Lumen Field, Seattle (WA)',                 slot1: 'Gan. P81', slot2: 'Gan. P82' },
