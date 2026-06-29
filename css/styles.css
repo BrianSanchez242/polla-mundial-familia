@@ -1641,7 +1641,7 @@ input:focus, select:focus {
 .live-bar-track {
     display: flex;
     width: max-content;
-    animation: liveBarScroll 40s linear infinite;
+    animation: liveBarScroll 20s linear infinite;
 }
 
 
