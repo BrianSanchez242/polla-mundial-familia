@@ -770,13 +770,30 @@ async function fetchLiveScores() {
                 );
                 if (!internalMatch) continue;
                 const kickoff = new Date(internalMatch.dateTime);
-                if (new Date() >= kickoff && !results.find(r => r.matchId === internalMatch.id)) {
-                    results.push({ matchId: internalMatch.id, score1: homeScore, score2: awayScore });
-                    await storage.set(`result:${internalMatch.id}`, { matchId: internalMatch.id, score1: homeScore, score2: awayScore });
+                if (new Date() < kickoff) continue;
+
+                // Detectar ganador en penales
+                const winnerComp = comp.competitors?.find(c => c.winner === true);
+                const penWinner = (winnerComp && homeScore === awayScore)
+                    ? (winnerComp.homeAway === 'home' ? 1 : 2)
+                    : undefined;
+
+                const existing = results.find(r => r.matchId === internalMatch.id);
+                // Guardar si no existe, o si ahora tenemos penWinner y antes no
+                if (!existing || (penWinner !== undefined && existing.penWinner === undefined)) {
+                    const resultData = { matchId: internalMatch.id, score1: homeScore, score2: awayScore };
+                    if (penWinner !== undefined) resultData.penWinner = penWinner;
+                    if (existing) {
+                        existing.score1 = homeScore; existing.score2 = awayScore;
+                        if (penWinner !== undefined) existing.penWinner = penWinner;
+                    } else {
+                        results.push(resultData);
+                    }
+                    await storage.set(`result:${internalMatch.id}`, resultData);
                     changed = true;
                     logAction(sessionStorage.getItem('pollaUser'), 'auto_save_result', {
                         matchId: internalMatch.id, home: homeEs, away: awayEs,
-                        score: `${homeScore}-${awayScore}`
+                        score: `${homeScore}-${awayScore}${penWinner !== undefined ? ' (pen)' : ''}`
                     });
                 }
             }
@@ -1873,11 +1890,13 @@ function getAllMatchesWithTeams() {
             : { team1: resolveGroupSlot(m.slot1), team2: resolveGroupSlot(m.slot2) };
     });
 
-    // Ganador / perdedor de un partido ya resuelto
+    // Ganador / perdedor de un partido ya resuelto (incluyendo penales)
     function getWinner(matchId) {
         const r = results.find(r => r.matchId === matchId);
         const m = resolved[matchId];
         if (!r || !m) return null;
+        if (r.penWinner === 1) return m.team1;
+        if (r.penWinner === 2) return m.team2;
         if (r.score1 > r.score2) return m.team1;
         if (r.score1 < r.score2) return m.team2;
         return null;
@@ -1886,6 +1905,8 @@ function getAllMatchesWithTeams() {
         const r = results.find(r => r.matchId === matchId);
         const m = resolved[matchId];
         if (!r || !m) return null;
+        if (r.penWinner === 1) return m.team2;
+        if (r.penWinner === 2) return m.team1;
         if (r.score1 > r.score2) return m.team2;
         if (r.score1 < r.score2) return m.team1;
         return null;
