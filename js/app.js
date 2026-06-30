@@ -2582,7 +2582,8 @@ async function renderTopScorers() {
             comp.competitors?.forEach(c => { teamNameById[c.team.id] = c.team.displayName; });
 
             for (const det of comp.details || []) {
-                if (det.type?.text !== 'Goal' || det.ownGoal) continue;
+                // scoringPlay cubre 'Goal', 'Goal - Free-kick', 'Goal - Header', 'Goal - Volley', 'Penalty - Scored', etc.
+                if (!det.scoringPlay || det.ownGoal) continue;
                 const athlete = det.athletesInvolved?.[0];
                 if (!athlete) continue;
                 const id = athlete.id;
