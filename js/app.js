@@ -2561,36 +2561,45 @@ async function renderTopScorers() {
 
     container.innerHTML = `<p style="color:var(--text-dim);text-align:center;padding:16px;font-size:0.9rem;">Cargando goleadores...</p>`;
     try {
-        const res = await fetch('https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/seasons/2026/types/1/leaders');
+        // El endpoint de "leaders" de ESPN se actualiza con retraso (a veces horas).
+        // En su lugar, calculamos los goleadores nosotros mismos a partir de los
+        // eventos de gol (details) del scoreboard, que se actualiza en vivo.
+        const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?limit=200&dates=20260611-20260719');
         if (!res.ok) throw new Error('api');
         const data = await res.json();
+        const events = data.events || [];
 
-        // Preferir categoría "goals" (nombre exacto) sobre "goalsLeaders"
-        const cats = data.categories || [];
-        const cat = cats.find(c => c.name === 'goals')
-            || cats.find(c => c.abbreviation === 'G')
-            || cats.find(c => (c.name || '').toLowerCase().includes('goal'));
-        const leaders = (cat?.leaders || []).slice(0, 10);
-        if (!leaders.length) throw new Error('empty');
+        const nameToFull = {};
+        defaultMatches.forEach(m => {
+            [m.team1, m.team2].forEach(t => { nameToFull[stripFlag(t)] = t; });
+        });
 
-        const players = (await Promise.all(leaders.map(async leader => {
-            const goals = Number(leader.value ?? leader.displayValue ?? 0);
-            let url = (leader.athlete?.$ref || '').replace('http://', 'https://');
-            if (!url) return null;
-            try {
-                const ar = await fetch(url);
-                const a  = await ar.json();
-                const name    = a.fullName || a.displayName || '?';
-                const flagUrl = a.flag?.href || '';
-                const m       = flagUrl.match(/\/([a-z]{2,3})\.png$/i);
-                const flag    = m ? _codeToFlag(m[1]) : '';
-                return { name, goals, flag };
-            } catch { return null; }
-        }))).filter(Boolean);
+        const tally = {}; // athleteId -> {name, goals, flag}
+        for (const event of events) {
+            const comp = event.competitions?.[0];
+            if (!comp) continue;
+            const teamNameById = {};
+            comp.competitors?.forEach(c => { teamNameById[c.team.id] = c.team.displayName; });
 
-        if (!players.length) throw new Error('no players');
+            for (const det of comp.details || []) {
+                if (det.type?.text !== 'Goal' || det.ownGoal) continue;
+                const athlete = det.athletesInvolved?.[0];
+                if (!athlete) continue;
+                const id = athlete.id;
+                if (!tally[id]) {
+                    const teamEs = ESPN_TO_ES[teamNameById[athlete.team?.id]] || teamNameById[athlete.team?.id] || '';
+                    const flagFull = nameToFull[teamEs] || '';
+                    const flag = flagFull.replace(stripFlag(flagFull), '').trim();
+                    tally[id] = { name: athlete.displayName || '?', goals: 0, flag };
+                }
+                tally[id].goals++;
+            }
+        }
+
+        const players = Object.values(tally).sort((a, b) => b.goals - a.goals).slice(0, 15);
+        if (!players.length) throw new Error('empty');
         _topScorersCache = players;
-_displayScorers(container, players);
+        _displayScorers(container, players);
     } catch {
         container.innerHTML = `<p style="color:var(--text-dim);text-align:center;padding:16px;font-size:0.9rem;">No disponible por el momento.</p>`;
     }
