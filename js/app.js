@@ -1247,101 +1247,102 @@ function renderMyPredictions() {
             </div>`;
     }
 
-    Object.keys(grouped).sort().forEach(group => {
-        html += `<h4 style="color:var(--primary); margin:16px 0 8px; font-size:0.95rem; letter-spacing:1px;">GRUPO ${group}</h4>`;
-        grouped[group].forEach(({ match, pred }) => {
-            const result = results.find(r => r.matchId === match.id);
-            let pointsBadge = '';
-            if (result && result.score1 !== null && result.score2 !== null) {
-                const isExact = pred.score1 === result.score1 && pred.score2 === result.score2;
-                const predOutcome = Math.sign(pred.score1 - pred.score2);
-                const resOutcome = Math.sign(result.score1 - result.score2);
-                const isTendency = !isExact && predOutcome === resOutcome;
-                if (isExact) pointsBadge = `<span style="background:rgba(0,255,136,0.15);color:#00FF88;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">+3 pts ✓</span>`;
-                else if (isTendency) pointsBadge = `<span style="background:rgba(255,215,0,0.15);color:#FFD700;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">+1 pt</span>`;
-                else pointsBadge = `<span style="background:rgba(255,51,102,0.15);color:#FF3366;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">0 pts</span>`;
-            }
+    // Helper: tarjeta de pick con resultado y puntos
+    function pickCard(pred, result, t1, t2, label) {
+        let pointsBadge = '';
+        if (result) {
+            const isExact = pred.score1 === result.score1 && pred.score2 === result.score2;
+            const isTend  = !isExact && Math.sign(pred.score1 - pred.score2) === Math.sign(result.score1 - result.score2);
+            if (isExact)     pointsBadge = `<span style="background:rgba(0,255,136,0.15);color:#00FF88;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">+3 pts ✓</span>`;
+            else if (isTend) pointsBadge = `<span style="background:rgba(255,215,0,0.15);color:#FFD700;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">+1 pt</span>`;
+            else             pointsBadge = `<span style="background:rgba(255,51,102,0.15);color:#FF3366;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">0 pts</span>`;
+        }
+        const scoreBlock = result
+            ? `<div style="text-align:center;min-width:80px;">
+                   <div style="background:rgba(0,217,255,0.12);color:#00D9FF;padding:4px 12px;border-radius:8px;font-weight:700;font-size:1rem;">${result.score1} - ${result.score2}</div>
+                   <div style="font-size:0.72rem;color:#A0A8C0;margin-top:3px;">tu pick: ${pred.score1}–${pred.score2}</div>
+               </div>`
+            : `<div style="text-align:center;min-width:80px;">
+                   <span style="background:rgba(0,217,255,0.08);color:#5A8FA8;padding:4px 12px;border-radius:8px;font-weight:700;font-size:1rem;border:1px dashed rgba(0,217,255,0.2);">${pred.score1} - ${pred.score2}</span>
+               </div>`;
+        return `
+            <div class="pick-card">
+                <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px;">${label}</div>
+                <div class="pick-card-teams">
+                    <span class="pick-team pick-team-left">${t1}</span>
+                    ${scoreBlock}
+                    <span class="pick-team pick-team-right">${t2}</span>
+                </div>
+                ${pointsBadge ? `<div class="pick-card-points">${pointsBadge}</div>` : ''}
+            </div>`;
+    }
 
-            const scoreBlock = result
-                ? `<div style="text-align:center; min-width:80px;">
-                       <div style="background:rgba(0,217,255,0.12);color:#00D9FF;padding:4px 12px;border-radius:8px;font-weight:700;font-size:1rem;">${result.score1} - ${result.score2}</div>
-                       <div style="font-size:0.72rem;color:#A0A8C0;margin-top:3px;">tu pick: ${pred.score1}–${pred.score2}</div>
-                   </div>`
-                : `<div style="text-align:center; min-width:80px;">
-                       <span style="background:rgba(0,217,255,0.08);color:#5A8FA8;padding:4px 12px;border-radius:8px;font-weight:700;font-size:1rem;border:1px dashed rgba(0,217,255,0.2);">${pred.score1} - ${pred.score2}</span>
-                   </div>`;
-
-            html += `
-                <div class="pick-card">
-                    <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px;">${formatPETime(match.dateTime)}</div>
-                    <div class="pick-card-teams">
-                        <span class="pick-team pick-team-left">${match.team1}</span>
-                        ${scoreBlock}
-                        <span class="pick-team pick-team-right">${match.team2}</span>
-                    </div>
-                    ${pointsBadge ? `<div class="pick-card-points">${pointsBadge}</div>` : ''}
-                </div>`;
-        });
-    });
-
-    // ── Predicciones R32 ──────────────────────────────────────────────────────
+    // ── 1. DIECISEISAVOS DE FINAL (arriba) ───────────────────────────────────
     const r32Preds = round32Bracket
         .map(m => ({ match: m, pred: me.predictions.find(p => p.matchId === m.id) }))
         .filter(x => x.pred);
 
     if (r32Preds.length > 0) {
-        const groupStandings = computeGroupStandings();
-        const { slotMap } = computeBestThirds(groupStandings);
+        const allWithTeams = getAllMatchesWithTeams();
+        const teamsByMatchId = {};
+        allWithTeams.forEach(m => { teamsByMatchId[m.id] = { team1: m.team1, team2: m.team2 }; });
 
-        function resolveSlotName(slot) {
-            const gm = slot.match(/^(\d)°\s+Grupo\s+([A-L])$/);
-            if (gm) {
-                const s = groupStandings[gm[2]];
-                return s?.[parseInt(gm[1]) - 1]?.name || slot;
-            }
-            if (slot.startsWith('Mejor 3°')) return slotMap[slot]?.name || slot;
-            return slot;
-        }
-
-        html += `<h4 style="color:var(--primary); margin:24px 0 8px; font-size:0.95rem; letter-spacing:1px;">🏆 DIECISEISAVOS DE FINAL</h4>`;
+        html += `<h4 style="color:var(--primary); margin:0 0 10px; font-size:0.95rem; letter-spacing:1px;">⚔️ DIECISEISAVOS DE FINAL</h4>`;
         r32Preds.forEach(({ match: m, pred }) => {
             const result = results.find(r => r.matchId === m.id);
-            const espn = espnKnockoutTeams[m.id];
-            const t1 = espn ? espn.team1 : resolveSlotName(m.slot1);
-            const t2 = espn ? espn.team2 : resolveSlotName(m.slot2);
-            let pointsBadge = '';
-            if (result) {
-                const isExact = pred.score1 === result.score1 && pred.score2 === result.score2;
-                const isTend  = !isExact && Math.sign(pred.score1 - pred.score2) === Math.sign(result.score1 - result.score2);
-                if (isExact)     pointsBadge = `<span style="background:rgba(0,255,136,0.15);color:#00FF88;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">+3 pts ✓</span>`;
-                else if (isTend) pointsBadge = `<span style="background:rgba(255,215,0,0.15);color:#FFD700;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">+1 pt</span>`;
-                else             pointsBadge = `<span style="background:rgba(255,51,102,0.15);color:#FF3366;padding:3px 10px;border-radius:10px;font-size:0.8rem;font-weight:700;">0 pts</span>`;
-            }
-            const scoreBlock = result
-                ? `<div style="text-align:center;min-width:80px;">
-                       <div style="background:rgba(0,217,255,0.12);color:#00D9FF;padding:4px 12px;border-radius:8px;font-weight:700;font-size:1rem;">${result.score1} - ${result.score2}</div>
-                       <div style="font-size:0.72rem;color:#A0A8C0;margin-top:3px;">tu pick: ${pred.score1}–${pred.score2}</div>
-                   </div>`
-                : `<div style="text-align:center;min-width:80px;">
-                       <span style="background:rgba(0,217,255,0.08);color:#5A8FA8;padding:4px 12px;border-radius:8px;font-weight:700;font-size:1rem;border:1px dashed rgba(0,217,255,0.2);">${pred.score1} - ${pred.score2}</span>
-                   </div>`;
-            html += `
-                <div class="pick-card">
-                    <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px;">P${m.id} · ${formatPETime(m.dateTime)}</div>
-                    <div class="pick-card-teams">
-                        <span class="pick-team pick-team-left">${t1}</span>
-                        ${scoreBlock}
-                        <span class="pick-team pick-team-right">${t2}</span>
-                    </div>
-                    ${pointsBadge ? `<div class="pick-card-points">${pointsBadge}</div>` : ''}
-                </div>`;
+            const teams = teamsByMatchId[m.id] || {};
+            const t1 = teams.team1 || m.slot1;
+            const t2 = teams.team2 || m.slot2;
+            html += pickCard(pred, result, t1, t2, `P${m.id} · ${formatPETime(m.dateTime)}`);
         });
     }
+
+    // ── 2. FASE DE GRUPOS (acordeón colapsable) ───────────────────────────────
+    const groupMatchCount = Object.values(grouped).reduce((s, g) => s + g.length, 0);
+    const groupPoints = Object.values(grouped).flat().reduce((sum, { match, pred }) => {
+        const result = results.find(r => r.matchId === match.id);
+        if (!result) return sum;
+        const isExact = pred.score1 === result.score1 && pred.score2 === result.score2;
+        const isTend  = !isExact && Math.sign(pred.score1 - pred.score2) === Math.sign(result.score1 - result.score2);
+        return sum + (isExact ? 3 : isTend ? 1 : 0);
+    }, 0);
+
+    let groupCardsHtml = '';
+    Object.keys(grouped).sort().forEach(group => {
+        groupCardsHtml += `<h4 style="color:var(--primary); margin:16px 0 8px; font-size:0.9rem; letter-spacing:1px; opacity:0.8;">GRUPO ${group}</h4>`;
+        grouped[group].forEach(({ match, pred }) => {
+            const result = results.find(r => r.matchId === match.id);
+            groupCardsHtml += pickCard(pred, result, match.team1, match.team2, formatPETime(match.dateTime));
+        });
+    });
+
+    html += `
+        <div style="margin-top:20px;">
+            <button onclick="toggleMyGroupStage(this)"
+                style="width:100%;display:flex;justify-content:space-between;align-items:center;
+                       background:rgba(0,217,255,0.05);border:1px solid rgba(0,217,255,0.2);
+                       border-radius:12px;padding:14px 18px;cursor:pointer;color:inherit;
+                       font-size:0.95rem;font-weight:600;letter-spacing:0.5px;">
+                <span>🌍 FASE DE GRUPOS <span style="font-weight:400;color:var(--text-dim);font-size:0.85rem;">${groupMatchCount} picks · ${groupPoints} pts</span></span>
+                <span class="toggle-arrow" style="color:var(--primary);font-size:1.1rem;transition:transform 0.25s;">▼</span>
+            </button>
+            <div class="my-group-stage-body" style="display:none;padding-top:4px;">
+                ${groupCardsHtml}
+            </div>
+        </div>`;
 
     container.innerHTML = html;
 }
 
 // Renderizar partidos para predicciones
+function toggleMyGroupStage(btn) {
+    const body = btn.nextElementSibling;
+    const arrow = btn.querySelector('.toggle-arrow');
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    if (arrow) arrow.style.transform = open ? '' : 'rotate(180deg)';
+}
+
 function renderMatches() {
     const username = sessionStorage.getItem('pollaUser');
     const displayName = localStorage.getItem(`pollaDisplayName:${username}`);
