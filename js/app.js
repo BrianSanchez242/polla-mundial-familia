@@ -684,7 +684,6 @@ let liveScores = {};
 let espnKnockoutTeams = {};
 let _livePollingInterval = null;
 let _topScorersCache = null;
-let _topScorersCacheTime = 0;
 let _topScorersExpanded = false;
 
 const ESPN_TO_ES = {
@@ -801,6 +800,7 @@ async function fetchLiveScores() {
         }
 
         if (changed) {
+            _topScorersCache = null; // forzar recarga de goleadores al terminar un partido
             await init();
             showToast('✅ Resultados actualizados automáticamente');
         } else {
@@ -2556,10 +2556,7 @@ async function renderTopScorers() {
     const container = document.getElementById('topScorersContent');
     if (!container) return;
 
-    const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-    if (_topScorersCache && Date.now() - _topScorersCacheTime < CACHE_TTL) {
-        _displayScorers(container, _topScorersCache); return;
-    }
+    if (_topScorersCache) { _displayScorers(container, _topScorersCache); return; }
 
     container.innerHTML = `<p style="color:var(--text-dim);text-align:center;padding:16px;font-size:0.9rem;">Cargando goleadores...</p>`;
     try {
@@ -2592,8 +2589,7 @@ async function renderTopScorers() {
 
         if (!players.length) throw new Error('no players');
         _topScorersCache = players;
-        _topScorersCacheTime = Date.now();
-        _displayScorers(container, players);
+_displayScorers(container, players);
     } catch {
         container.innerHTML = `<p style="color:var(--text-dim);text-align:center;padding:16px;font-size:0.9rem;">No disponible por el momento.</p>`;
     }
