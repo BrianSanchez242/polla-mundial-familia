@@ -684,6 +684,7 @@ let liveScores = {};
 let espnKnockoutTeams = {};
 let _livePollingInterval = null;
 let _topScorersCache = null;
+let _topScorersCacheTime = 0;
 let _topScorersExpanded = false;
 
 const ESPN_TO_ES = {
@@ -2555,7 +2556,10 @@ async function renderTopScorers() {
     const container = document.getElementById('topScorersContent');
     if (!container) return;
 
-    if (_topScorersCache) { _displayScorers(container, _topScorersCache); return; }
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+    if (_topScorersCache && Date.now() - _topScorersCacheTime < CACHE_TTL) {
+        _displayScorers(container, _topScorersCache); return;
+    }
 
     container.innerHTML = `<p style="color:var(--text-dim);text-align:center;padding:16px;font-size:0.9rem;">Cargando goleadores...</p>`;
     try {
@@ -2563,11 +2567,11 @@ async function renderTopScorers() {
         if (!res.ok) throw new Error('api');
         const data = await res.json();
 
-        const cat = (data.categories || []).find(c =>
-            (c.name || '').toLowerCase().includes('goal') ||
-            (c.displayName || '').toLowerCase().includes('goal') ||
-            c.abbreviation === 'G'
-        );
+        // Preferir categoría "goals" (nombre exacto) sobre "goalsLeaders"
+        const cats = data.categories || [];
+        const cat = cats.find(c => c.name === 'goals')
+            || cats.find(c => c.abbreviation === 'G')
+            || cats.find(c => (c.name || '').toLowerCase().includes('goal'));
         const leaders = (cat?.leaders || []).slice(0, 10);
         if (!leaders.length) throw new Error('empty');
 
@@ -2588,6 +2592,7 @@ async function renderTopScorers() {
 
         if (!players.length) throw new Error('no players');
         _topScorersCache = players;
+        _topScorersCacheTime = Date.now();
         _displayScorers(container, players);
     } catch {
         container.innerHTML = `<p style="color:var(--text-dim);text-align:center;padding:16px;font-size:0.9rem;">No disponible por el momento.</p>`;
