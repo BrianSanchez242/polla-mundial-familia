@@ -1280,7 +1280,8 @@ function renderMyPredictions() {
     // ── 1. DIECISEISAVOS DE FINAL (arriba) ───────────────────────────────────
     const r32Preds = round32Bracket
         .map(m => ({ match: m, pred: me.predictions.find(p => p.matchId === m.id) }))
-        .filter(x => x.pred);
+        .filter(x => x.pred)
+        .reverse();
 
     if (r32Preds.length > 0) {
         const allWithTeams = getAllMatchesWithTeams();
