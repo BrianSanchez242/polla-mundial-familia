@@ -772,19 +772,45 @@ async function fetchLiveScores() {
                 const kickoff = new Date(internalMatch.dateTime);
                 if (new Date() < kickoff) continue;
 
-                // Detectar ganador en penales
-                const winnerComp = comp.competitors?.find(c => c.winner === true);
-                const penWinner = (winnerComp && homeScore === awayScore)
-                    ? (winnerComp.homeAway === 'home' ? 1 : 2)
-                    : undefined;
+                // En fase eliminatoria con tiempo extra: guardar marcador al 90'
+                // (sin goles de ET). Para penales y tiempo extra usamos penWinner
+                // para indicar quién clasifica en el bracket.
+                const isKnockout = internalMatch.id >= 73;
+                const isAET = statusType.name === 'STATUS_FINAL_AET';
+
+                let save1 = homeScore, save2 = awayScore, penWinner;
+
+                if (isKnockout && isAET) {
+                    // Recalcular marcador a 90' excluyendo goles de tiempo extra (min >= 91)
+                    save1 = 0; save2 = 0;
+                    const homeTeamId = home.team.id;
+                    for (const det of comp.details || []) {
+                        if (!det.scoringPlay) continue;
+                        if (parseInt(det.clock?.displayValue || '0') >= 91) continue;
+                        const scorerTeamId = det.athletesInvolved?.[0]?.team?.id;
+                        if (det.ownGoal) {
+                            if (scorerTeamId === homeTeamId) save2++; else save1++;
+                        } else {
+                            if (scorerTeamId === homeTeamId) save1++; else save2++;
+                        }
+                    }
+                    const winnerComp = comp.competitors?.find(c => c.winner === true);
+                    if (winnerComp) penWinner = winnerComp.homeAway === 'home' ? 1 : 2;
+                } else {
+                    // Detectar ganador en penales (marcador ya es el de 90')
+                    const winnerComp = comp.competitors?.find(c => c.winner === true);
+                    penWinner = (winnerComp && homeScore === awayScore)
+                        ? (winnerComp.homeAway === 'home' ? 1 : 2)
+                        : undefined;
+                }
 
                 const existing = results.find(r => r.matchId === internalMatch.id);
                 // Guardar si no existe, o si ahora tenemos penWinner y antes no
                 if (!existing || (penWinner !== undefined && existing.penWinner === undefined)) {
-                    const resultData = { matchId: internalMatch.id, score1: homeScore, score2: awayScore };
+                    const resultData = { matchId: internalMatch.id, score1: save1, score2: save2 };
                     if (penWinner !== undefined) resultData.penWinner = penWinner;
                     if (existing) {
-                        existing.score1 = homeScore; existing.score2 = awayScore;
+                        existing.score1 = save1; existing.score2 = save2;
                         if (penWinner !== undefined) existing.penWinner = penWinner;
                     } else {
                         results.push(resultData);
@@ -793,7 +819,7 @@ async function fetchLiveScores() {
                     changed = true;
                     logAction(sessionStorage.getItem('pollaUser'), 'auto_save_result', {
                         matchId: internalMatch.id, home: homeEs, away: awayEs,
-                        score: `${homeScore}-${awayScore}${penWinner !== undefined ? ' (pen)' : ''}`
+                        score: `${save1}-${save2}${penWinner !== undefined ? (isAET ? ' (aet)' : ' (pen)') : ''}`
                     });
                 }
             }
