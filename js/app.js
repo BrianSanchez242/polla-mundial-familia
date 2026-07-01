@@ -2581,10 +2581,14 @@ async function renderTopScorers() {
             if (!comp) continue;
             const teamNameById = {};
             comp.competitors?.forEach(c => { teamNameById[c.team.id] = c.team.displayName; });
+            // En partidos decididos por penales, los disparos de la tanda aparecen
+            // como 'Penalty - Scored' a las '120'' — no cuentan como goles oficiales
+            const isShootout = comp.status?.type?.name === 'STATUS_FINAL_PEN';
 
             for (const det of comp.details || []) {
                 // scoringPlay cubre 'Goal', 'Goal - Free-kick', 'Goal - Header', 'Goal - Volley', 'Penalty - Scored', etc.
                 if (!det.scoringPlay || det.ownGoal) continue;
+                if (isShootout && det.type?.text === 'Penalty - Scored' && det.clock?.displayValue === "120'") continue;
                 const athlete = det.athletesInvolved?.[0];
                 if (!athlete) continue;
                 const id = athlete.id;
