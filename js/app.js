@@ -780,8 +780,10 @@ async function fetchLiveScores() {
 
                 let save1 = homeScore, save2 = awayScore, penWinner;
 
+                let aetScore1, aetScore2;
                 if (isKnockout && isAET) {
                     // Recalcular marcador a 90' excluyendo goles de tiempo extra (min >= 91)
+                    aetScore1 = homeScore; aetScore2 = awayScore; // guardar marcador real AET
                     save1 = 0; save2 = 0;
                     const homeTeamId = home.team.id;
                     for (const det of comp.details || []) {
@@ -809,9 +811,11 @@ async function fetchLiveScores() {
                 if (!existing || (penWinner !== undefined && existing.penWinner === undefined)) {
                     const resultData = { matchId: internalMatch.id, score1: save1, score2: save2 };
                     if (penWinner !== undefined) resultData.penWinner = penWinner;
+                    if (aetScore1 !== undefined) { resultData.aetScore1 = aetScore1; resultData.aetScore2 = aetScore2; }
                     if (existing) {
                         existing.score1 = save1; existing.score2 = save2;
                         if (penWinner !== undefined) existing.penWinner = penWinner;
+                        if (aetScore1 !== undefined) { existing.aetScore1 = aetScore1; existing.aetScore2 = aetScore2; }
                     } else {
                         results.push(resultData);
                     }
@@ -1287,6 +1291,7 @@ function renderMyPredictions() {
             ? `<div style="text-align:center;min-width:80px;">
                    <div style="background:rgba(0,217,255,0.12);color:#00D9FF;padding:4px 12px;border-radius:8px;font-weight:700;font-size:1rem;">${result.score1} - ${result.score2}</div>
                    <div style="font-size:0.72rem;color:#A0A8C0;margin-top:3px;">tu pick: ${pred.score1}–${pred.score2}</div>
+                   ${result.aetScore1 !== undefined ? `<div style="font-size:0.68rem;color:#6B7280;margin-top:2px;">ET: ${result.aetScore1}-${result.aetScore2}</div>` : ''}
                </div>`
             : `<div style="text-align:center;min-width:80px;">
                    <span style="background:rgba(0,217,255,0.08);color:#5A8FA8;padding:4px 12px;border-radius:8px;font-weight:700;font-size:1rem;border:1px dashed rgba(0,217,255,0.2);">${pred.score1} - ${pred.score2}</span>
@@ -2518,8 +2523,11 @@ function renderAllPicks() {
             </tr>`;
         }).join('');
 
+        const aetNote = (result?.aetScore1 !== undefined)
+            ? `<span style="color:#A0A8C0;font-size:0.8rem;margin-left:6px;">· no cuenta ET: ${result.aetScore1}-${result.aetScore2}</span>`
+            : '';
         const resultTag = result
-            ? `<span style="color:#00D9FF;font-weight:700;margin-left:8px;">· ${result.score1}-${result.score2} FINAL</span>`
+            ? `<span style="color:#00D9FF;font-weight:700;margin-left:8px;">· ${result.score1}-${result.score2} FINAL${aetNote}</span>`
             : '';
 
         return `<details style="margin-bottom:10px;border:1px solid rgba(255,255,255,0.1);border-radius:12px;overflow:hidden;">
