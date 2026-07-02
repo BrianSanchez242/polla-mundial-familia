@@ -1522,7 +1522,10 @@ function renderMatches() {
                     const isInTimeWindow = minsSinceStart >= 0 && minsSinceStart < 130;
                     let liveBadge = '';
                     if (savedResult) {
-                        liveBadge = `<span style="background:rgba(0,217,255,0.1); border:1px solid #00D9FF; color:#00D9FF; padding:4px 12px; border-radius:12px; font-size:0.8rem; font-weight:700;">✅ ${savedResult.score1}-${savedResult.score2} · FINAL</span>`;
+                        const aetNote = savedResult.aetScore1 !== undefined
+                            ? ` <span style="font-weight:400;opacity:0.75;">· no cuenta ET: ${savedResult.aetScore1}-${savedResult.aetScore2}</span>`
+                            : '';
+                        liveBadge = `<span style="background:rgba(0,217,255,0.1); border:1px solid #00D9FF; color:#00D9FF; padding:4px 12px; border-radius:12px; font-size:0.8rem; font-weight:700;">✅ ${savedResult.score1}-${savedResult.score2} · FINAL${aetNote}</span>`;
                     } else if (live && live.status === 'IN_PLAY') {
                         liveBadge = `<span style="background:rgba(0,255,136,0.15); border:1px solid #00FF88; color:#00FF88; padding:4px 12px; border-radius:12px; font-size:0.8rem; font-weight:700; animation:pulse 1.5s infinite;">⚽ ${live.home_score}-${live.away_score} · ${live.minute || ''}' EN VIVO</span>`;
                     } else if (live && live.status === 'PAUSED') {
@@ -2252,7 +2255,10 @@ function renderKnockoutPredictions() {
         const isInTimeWindow = minsSinceStart >= 0 && minsSinceStart < 130;
         let liveBadge = '';
         if (liveResult) {
-            liveBadge = `<span style="background:rgba(0,217,255,0.1);border:1px solid #00D9FF;color:#00D9FF;padding:4px 12px;border-radius:12px;font-size:0.8rem;font-weight:700;">✅ ${liveResult.score1}-${liveResult.score2} · FINAL</span>`;
+            const aetNoteKO = liveResult.aetScore1 !== undefined
+                ? ` <span style="font-weight:400;opacity:0.75;">· no cuenta ET: ${liveResult.aetScore1}-${liveResult.aetScore2}</span>`
+                : '';
+            liveBadge = `<span style="background:rgba(0,217,255,0.1);border:1px solid #00D9FF;color:#00D9FF;padding:4px 12px;border-radius:12px;font-size:0.8rem;font-weight:700;">✅ ${liveResult.score1}-${liveResult.score2} · FINAL${aetNoteKO}</span>`;
         } else if (live && live.status === 'IN_PLAY') {
             liveBadge = `<span style="background:rgba(0,255,136,0.15);border:1px solid #00FF88;color:#00FF88;padding:4px 12px;border-radius:12px;font-size:0.8rem;font-weight:700;animation:pulse 1.5s infinite;">⚽ ${live.home_score}-${live.away_score} · ${live.minute || ''}' EN VIVO</span>`;
         } else if (live && live.status === 'PAUSED') {
