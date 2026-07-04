@@ -847,9 +847,13 @@ function startLivePolling() {
 }
 
 async function fetchESPNKnockoutBracket() {
-    // Venue key (before comma, lowercase) → bracket entries
+    // Todos los brackets eliminatorios → venue key → lista de partidos
+    const allKO = [
+        ...round32Bracket, ...round16Bracket, ...quarterFinalsBracket,
+        ...semiFinalsBracket, ...thirdPlaceBracket, ...finalBracket,
+    ];
     const venueEntries = {};
-    round32Bracket.forEach(m => {
+    allKO.forEach(m => {
         const vk = m.venue.split(',')[0].trim().toLowerCase().replace(/['']/g, "'");
         if (!venueEntries[vk]) venueEntries[vk] = [];
         venueEntries[vk].push(m);
@@ -862,7 +866,7 @@ async function fetchESPNKnockoutBracket() {
     });
 
     try {
-        const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260628-20260703&limit=50');
+        const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260628-20260719&limit=100');
         if (!res.ok) return;
         const data = await res.json();
         for (const event of data.events || []) {
