@@ -2312,21 +2312,24 @@ function renderKnockoutPredictions() {
 
     const r32Saved = round32Bracket.filter(m => myPreds.find(p => p.matchId === m.id)).length;
 
-    // Una ronda se abre para predicciones en cuanto la ronda anterior tiene al menos un resultado
-    const hasResult = bracket => bracket.some(m => results.find(r => r.matchId === m.id));
-    const r32Active = true;
-    const r16Active = hasResult(round32Bracket);
-    const qfActive  = hasResult(round16Bracket);
-    const sfActive  = hasResult(quarterFinalsBracket);
+    // active = ronda habilitada para predicciones (inputs visibles)
+    // open   = acordeón expandido por defecto (solo la ronda actual con partidos pendientes)
+    const hasResult  = bracket => bracket.some(m => results.find(r => r.matchId === m.id));
+    const hasPending = bracket => bracket.some(m => !results.find(r => r.matchId === m.id));
+    const r32Active  = true;
+    const r16Active  = hasResult(round32Bracket);
+    const qfActive   = hasResult(round16Bracket);
+    const sfActive   = hasResult(quarterFinalsBracket);
     const lateActive = hasResult(semiFinalsBracket);
 
+    // Una ronda se muestra abierta si está habilitada Y aún tiene partidos sin resultado
     const rounds = [
-        { key: 'r32',  icon: '🏆', title: 'Dieciseisavos de Final', subtitle: `16 partidos · 28 jun – 3 jul 2026 · <span style="color:#00FF88;">${r32Saved}/16 guardados</span>`, startLabel: '28 JUN', mod: '',        bracket: round32Bracket,        active: r32Active  },
-        { key: 'r16',  icon: '⚔️', title: 'Octavos de Final',       subtitle: '8 partidos · 4–7 jul 2026',                                                                         startLabel: '4 JUL',  mod: '--r16',   bracket: round16Bracket,        active: r16Active  },
-        { key: 'qf',   icon: '🛡️', title: 'Cuartos de Final',       subtitle: '4 partidos · 9–11 jul 2026',                                                                        startLabel: '9 JUL',  mod: '--qf',    bracket: quarterFinalsBracket,  active: qfActive   },
-        { key: 'sf',   icon: '🔥', title: 'Semifinales',             subtitle: '2 partidos · 14–15 jul 2026',                                                                       startLabel: '14 JUL', mod: '--sf',    bracket: semiFinalsBracket,     active: sfActive   },
-        { key: '3rd',  icon: '🥉', title: 'Tercer Puesto',           subtitle: 'Hard Rock Stadium, Miami · 18 jul',                                                                 startLabel: '18 JUL', mod: '--3rd',   bracket: thirdPlaceBracket,     active: lateActive },
-        { key: 'fin',  icon: '🏆', title: 'Gran Final',              subtitle: 'MetLife Stadium, NJ · 19 jul 2026',                                                                 startLabel: '19 JUL', mod: '--final', bracket: finalBracket,          active: lateActive },
+        { key: 'r32',  icon: '🏆', title: 'Dieciseisavos de Final', subtitle: `16 partidos · 28 jun – 3 jul 2026 · <span style="color:#00FF88;">${r32Saved}/16 guardados</span>`, startLabel: '28 JUN', mod: '',        bracket: round32Bracket,        active: r32Active,  open: r32Active  && hasPending(round32Bracket)       },
+        { key: 'r16',  icon: '⚔️', title: 'Octavos de Final',       subtitle: '8 partidos · 4–7 jul 2026',                                                                         startLabel: '4 JUL',  mod: '--r16',   bracket: round16Bracket,        active: r16Active,  open: r16Active  && hasPending(round16Bracket)       },
+        { key: 'qf',   icon: '🛡️', title: 'Cuartos de Final',       subtitle: '4 partidos · 9–11 jul 2026',                                                                        startLabel: '9 JUL',  mod: '--qf',    bracket: quarterFinalsBracket,  active: qfActive,   open: qfActive   && hasPending(quarterFinalsBracket) },
+        { key: 'sf',   icon: '🔥', title: 'Semifinales',             subtitle: '2 partidos · 14–15 jul 2026',                                                                       startLabel: '14 JUL', mod: '--sf',    bracket: semiFinalsBracket,     active: sfActive,   open: sfActive   && hasPending(semiFinalsBracket)    },
+        { key: '3rd',  icon: '🥉', title: 'Tercer Puesto',           subtitle: 'Hard Rock Stadium, Miami · 18 jul',                                                                 startLabel: '18 JUL', mod: '--3rd',   bracket: thirdPlaceBracket,     active: lateActive, open: lateActive && hasPending(thirdPlaceBracket)    },
+        { key: 'fin',  icon: '🏆', title: 'Gran Final',              subtitle: 'MetLife Stadium, NJ · 19 jul 2026',                                                                 startLabel: '19 JUL', mod: '--final', bracket: finalBracket,          active: lateActive, open: lateActive && hasPending(finalBracket)         },
     ];
 
     container.innerHTML = rounds.map(r => `
@@ -2343,10 +2346,10 @@ function renderKnockoutPredictions() {
                         <span class="r32-start-label">INICIO</span>
                         <span class="r32-start-date">${r.startLabel}</span>
                     </div>
-                    <span class="special-toggle-arrow" id="kp-arrow-${r.key}">${r.active ? '▲' : '▼'}</span>
+                    <span class="special-toggle-arrow" id="kp-arrow-${r.key}">${r.open ? '▲' : '▼'}</span>
                 </div>
             </div>
-            <div class="kp-body ${r.active ? 'open' : ''}" id="kp-body-${r.key}">
+            <div class="kp-body ${r.open ? 'open' : ''}" id="kp-body-${r.key}">
                 ${r.bracket.map(m => matchCard(m, r.active)).join('')}
             </div>
         </div>
