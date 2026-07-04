@@ -2360,7 +2360,17 @@ async function saveKnockoutPredictions() {
     const name = document.getElementById('participantName').value.trim();
     if (!name) { showToast('⚠️ Tu nombre no está cargado, recarga la página'); return; }
 
-    const newPreds = round32Bracket
+    // Recoger picks de todos los brackets eliminatorios con inputs visibles
+    const allKnockoutBrackets = [
+        ...round32Bracket,
+        ...round16Bracket,
+        ...quarterFinalsBracket,
+        ...semiFinalsBracket,
+        ...thirdPlaceBracket,
+        ...finalBracket,
+    ];
+
+    const newPreds = allKnockoutBrackets
         .filter(m => {
             if (isMatchLocked(m)) return false;
             const s1 = document.getElementById(`score1-${m.id}`)?.value;
@@ -2374,7 +2384,7 @@ async function saveKnockoutPredictions() {
         }));
 
     if (newPreds.length === 0) {
-        showToast('⚠️ Ingresa al menos 1 predicción de 16avos');
+        showToast('⚠️ Ingresa al menos 1 predicción eliminatoria');
         return;
     }
 
@@ -2405,12 +2415,12 @@ async function saveKnockoutPredictions() {
     if (idx >= 0) participants[idx] = participant;
     else participants.push(participant);
 
-    logAction(sessionStorage.getItem('pollaUser'), 'save_predictions', { count: newPreds.length, phase: 'r32' });
+    logAction(sessionStorage.getItem('pollaUser'), 'save_predictions', { count: newPreds.length, phase: 'knockout' });
     renderKnockoutPredictions();
     renderMyPredictions();
     updateLeaderboard();
     updateStats();
-    showToast(`✅ ${newPreds.length} pick(s) de 16avos guardados`);
+    showToast(`✅ ${newPreds.length} pick(s) eliminatorios guardados`);
 }
 
 function renderRound16()      { renderKnockoutRound(round16Bracket,      'round16Container'); }
