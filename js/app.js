@@ -1308,26 +1308,35 @@ function renderMyPredictions() {
             </div>`;
     }
 
-    // ── 1. DIECISEISAVOS DE FINAL (arriba) ───────────────────────────────────
-    const r32Preds = round32Bracket
-        .map(m => ({ match: m, pred: me.predictions.find(p => p.matchId === m.id) }))
-        .filter(x => x.pred)
-        .reverse();
+    // ── 1. FASE ELIMINATORIA (descendente: Final → R32) ──────────────────────
+    const allWithTeams = getAllMatchesWithTeams();
+    const teamsByMatchId = {};
+    allWithTeams.forEach(m => { teamsByMatchId[m.id] = { team1: m.team1, team2: m.team2 }; });
 
-    if (r32Preds.length > 0) {
-        const allWithTeams = getAllMatchesWithTeams();
-        const teamsByMatchId = {};
-        allWithTeams.forEach(m => { teamsByMatchId[m.id] = { team1: m.team1, team2: m.team2 }; });
+    const knockoutRounds = [
+        { bracket: finalBracket,         icon: '🏆', label: 'GRAN FINAL' },
+        { bracket: thirdPlaceBracket,    icon: '🥉', label: 'TERCER PUESTO' },
+        { bracket: semiFinalsBracket,    icon: '🔥', label: 'SEMIFINALES' },
+        { bracket: quarterFinalsBracket, icon: '🛡️', label: 'CUARTOS DE FINAL' },
+        { bracket: round16Bracket,       icon: '⚔️', label: 'OCTAVOS DE FINAL' },
+        { bracket: round32Bracket,       icon: '⚔️', label: 'DIECISEISAVOS DE FINAL' },
+    ];
 
-        html += `<h4 style="color:var(--primary); margin:0 0 10px; font-size:0.95rem; letter-spacing:1px;">⚔️ DIECISEISAVOS DE FINAL</h4>`;
-        r32Preds.forEach(({ match: m, pred }) => {
+    knockoutRounds.forEach(({ bracket, icon, label }) => {
+        const preds = bracket
+            .map(m => ({ match: m, pred: me.predictions.find(p => p.matchId === m.id) }))
+            .filter(x => x.pred)
+            .reverse();
+        if (preds.length === 0) return;
+        html += `<h4 style="color:var(--primary); margin:16px 0 10px; font-size:0.95rem; letter-spacing:1px;">${icon} ${label}</h4>`;
+        preds.forEach(({ match: m, pred }) => {
             const result = results.find(r => r.matchId === m.id);
             const teams = teamsByMatchId[m.id] || {};
             const t1 = teams.team1 || m.slot1;
             const t2 = teams.team2 || m.slot2;
             html += pickCard(pred, result, t1, t2, `P${m.id} · ${formatPETime(m.dateTime)}`);
         });
-    }
+    });
 
     // ── 2. FASE DE GRUPOS (acordeón colapsable) ───────────────────────────────
     const groupMatchCount = Object.values(grouped).reduce((s, g) => s + g.length, 0);
