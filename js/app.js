@@ -2138,6 +2138,10 @@ function renderKnockoutPredictions() {
     const groupStandings = computeGroupStandings();
     const { allDone: allGroupsDone, slotMap } = computeBestThirds(groupStandings);
 
+    // Mapa de equipos resueltos para todos los partidos (incluye R16+)
+    const resolvedTeams = {};
+    getAllMatchesWithTeams().forEach(m => { resolvedTeams[m.id] = { team1: m.team1, team2: m.team2 }; });
+
     // Predicciones del usuario actual
     const username    = sessionStorage.getItem('pollaUser');
     const displayName = localStorage.getItem(`pollaDisplayName:${username}`);
@@ -2168,6 +2172,22 @@ function renderKnockoutPredictions() {
     }
 
     function resolveSlot(slot) {
+        // "Gan. PXX" → ganador del partido XX (R32, R16, etc.)
+        const ganM = slot.match(/^Gan\.\s*P(\d+)$/);
+        if (ganM) {
+            const srcId = parseInt(ganM[1]);
+            const r = results.find(res => res.matchId === srcId);
+            if (!r) return null;
+            const teams = resolvedTeams[srcId];
+            if (!teams) return null;
+            let winner;
+            if (r.penWinner === 1)      winner = teams.team1;
+            else if (r.penWinner === 2) winner = teams.team2;
+            else if (r.score1 > r.score2) winner = teams.team1;
+            else if (r.score1 < r.score2) winner = teams.team2;
+            else return null;
+            return { display: winner, confirmed: true };
+        }
         const gm = slot.match(/^(\d)°\s+Grupo\s+([A-L])$/);
         if (gm) {
             const pos = parseInt(gm[1]) - 1;
