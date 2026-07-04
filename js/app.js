@@ -1618,8 +1618,12 @@ async function submitPredictions() {
             score2: parseInt(document.getElementById(`score2-${match.id}`)?.value)
         }));
 
-    // Predicciones de 16avos (misma lógica — inputs desbloqueados con ambos valores)
-    const knockoutPredictions = round32Bracket
+    // Predicciones eliminatorias (todos los brackets — inputs desbloqueados con ambos valores)
+    const allKnockoutBrackets = [
+        ...round32Bracket, ...round16Bracket, ...quarterFinalsBracket,
+        ...semiFinalsBracket, ...thirdPlaceBracket, ...finalBracket,
+    ];
+    const knockoutPredictions = allKnockoutBrackets
         .filter(m => {
             if (isMatchLocked(m)) return false;
             const s1 = document.getElementById(`score1-${m.id}`)?.value;
@@ -1645,9 +1649,9 @@ async function submitPredictions() {
 
     const mergedPredictions = [...existingPredictions];
     newPredictions.forEach(np => {
-        if (!mergedPredictions.find(p => p.matchId === np.matchId)) {
-            mergedPredictions.push(np);
-        }
+        const idx = mergedPredictions.findIndex(p => p.matchId === np.matchId);
+        if (idx >= 0) mergedPredictions[idx] = np;
+        else mergedPredictions.push(np);
     });
 
     // Preservar special predictions existentes sin tocarlas (tienen su propio botón)
