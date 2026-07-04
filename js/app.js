@@ -2292,13 +2292,21 @@ function renderKnockoutPredictions() {
 
     const r32Saved = round32Bracket.filter(m => myPreds.find(p => p.matchId === m.id)).length;
 
+    // Una ronda se abre para predicciones en cuanto la ronda anterior tiene al menos un resultado
+    const hasResult = bracket => bracket.some(m => results.find(r => r.matchId === m.id));
+    const r32Active = true;
+    const r16Active = hasResult(round32Bracket);
+    const qfActive  = hasResult(round16Bracket);
+    const sfActive  = hasResult(quarterFinalsBracket);
+    const lateActive = hasResult(semiFinalsBracket);
+
     const rounds = [
-        { key: 'r32',  icon: '🏆', title: 'Dieciseisavos de Final', subtitle: `16 partidos · 28 jun – 3 jul 2026 · <span style="color:#00FF88;">${r32Saved}/16 guardados</span>`, startLabel: '28 JUN', mod: '',        bracket: round32Bracket,        active: true  },
-        { key: 'r16',  icon: '⚔️', title: 'Octavos de Final',       subtitle: '8 partidos · 4–7 jul 2026',                                                                         startLabel: '4 JUL',  mod: '--r16',   bracket: round16Bracket,        active: false },
-        { key: 'qf',   icon: '🛡️', title: 'Cuartos de Final',       subtitle: '4 partidos · 9–11 jul 2026',                                                                        startLabel: '9 JUL',  mod: '--qf',    bracket: quarterFinalsBracket,  active: false },
-        { key: 'sf',   icon: '🔥', title: 'Semifinales',             subtitle: '2 partidos · 14–15 jul 2026',                                                                       startLabel: '14 JUL', mod: '--sf',    bracket: semiFinalsBracket,     active: false },
-        { key: '3rd',  icon: '🥉', title: 'Tercer Puesto',           subtitle: 'Hard Rock Stadium, Miami · 18 jul',                                                                 startLabel: '18 JUL', mod: '--3rd',   bracket: thirdPlaceBracket,     active: false },
-        { key: 'fin',  icon: '🏆', title: 'Gran Final',              subtitle: 'MetLife Stadium, NJ · 19 jul 2026',                                                                 startLabel: '19 JUL', mod: '--final', bracket: finalBracket,          active: false },
+        { key: 'r32',  icon: '🏆', title: 'Dieciseisavos de Final', subtitle: `16 partidos · 28 jun – 3 jul 2026 · <span style="color:#00FF88;">${r32Saved}/16 guardados</span>`, startLabel: '28 JUN', mod: '',        bracket: round32Bracket,        active: r32Active  },
+        { key: 'r16',  icon: '⚔️', title: 'Octavos de Final',       subtitle: '8 partidos · 4–7 jul 2026',                                                                         startLabel: '4 JUL',  mod: '--r16',   bracket: round16Bracket,        active: r16Active  },
+        { key: 'qf',   icon: '🛡️', title: 'Cuartos de Final',       subtitle: '4 partidos · 9–11 jul 2026',                                                                        startLabel: '9 JUL',  mod: '--qf',    bracket: quarterFinalsBracket,  active: qfActive   },
+        { key: 'sf',   icon: '🔥', title: 'Semifinales',             subtitle: '2 partidos · 14–15 jul 2026',                                                                       startLabel: '14 JUL', mod: '--sf',    bracket: semiFinalsBracket,     active: sfActive   },
+        { key: '3rd',  icon: '🥉', title: 'Tercer Puesto',           subtitle: 'Hard Rock Stadium, Miami · 18 jul',                                                                 startLabel: '18 JUL', mod: '--3rd',   bracket: thirdPlaceBracket,     active: lateActive },
+        { key: 'fin',  icon: '🏆', title: 'Gran Final',              subtitle: 'MetLife Stadium, NJ · 19 jul 2026',                                                                 startLabel: '19 JUL', mod: '--final', bracket: finalBracket,          active: lateActive },
     ];
 
     container.innerHTML = rounds.map(r => `
