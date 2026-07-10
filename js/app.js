@@ -685,6 +685,7 @@ let espnKnockoutTeams = {};
 let _livePollingInterval = null;
 let _topScorersCache = null;
 let _topScorersExpanded = false;
+let _confettiShown = false;
 
 const ESPN_TO_ES = {
     'Mexico': 'México', 'South Africa': 'Sudáfrica',
@@ -2837,12 +2838,28 @@ function renderCharts(myDisplayName) {
 }
 
 // Cambiar de pestaña
+function launchConfetti() {
+    const duration = 2200;
+    const end = Date.now() + duration;
+    const colors = ['#FFD700', '#00FF88', '#00D9FF', '#FF4444', '#FFFFFF'];
+    (function frame() {
+        confetti({ particleCount: 6, angle: 60,  spread: 55, origin: { x: 0 }, colors });
+        confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 }, colors });
+        if (Date.now() < end) requestAnimationFrame(frame);
+    }());
+}
+
 function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
     document.getElementById(tabName).classList.add('active');
     event.target.closest('.tab-btn').classList.add('active');
+
+    if (tabName === 'leaderboard' && !_confettiShown) {
+        _confettiShown = true;
+        launchConfetti();
+    }
 
     const stickyWrapper = document.getElementById('saveBtnStickyWrapper');
     if (tabName === 'predictions') {
