@@ -1767,8 +1767,9 @@ function getRealSpecialResults() {
     const { winner: champion, loser: runnerUp } = winnerLoser(finalMatch, finalResult);
     const { winner: thirdPlace } = winnerLoser(thirdMatch, thirdResult);
 
-    // Goleador real = líder de la tabla calculada en renderTopScorers() desde goles de ESPN
-    const topScorer = _topScorersCache?.[0]?.name || null;
+    // Goleador real = líder de la tabla calculada en renderTopScorers() desde goles de ESPN.
+    // Solo se da por definitivo cuando termina la Final (puede cambiar si alguien anota ahí).
+    const topScorer = finalResult ? (_topScorersCache?.[0]?.name || null) : null;
 
     return { champion, runnerUp, thirdPlace, topScorer };
 }
