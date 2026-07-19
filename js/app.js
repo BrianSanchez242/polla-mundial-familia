@@ -1252,8 +1252,9 @@ function renderMyPredictions() {
     const fmtDateTime = ts => new Date(ts).toLocaleString('es-PE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima' });
     const registeredAt = me.createdAt ? fmtDateTime(me.createdAt) : fmtDateTime(me.timestamp);
     const updatedAt = me.timestamp && me.createdAt && me.timestamp !== me.createdAt ? ` · Actualizado: ${fmtDateTime(me.timestamp)}` : '';
-    const myStats = calculatePoints(me.predictions, results);
-    const pointsText = myStats.points > 0 ? ` · 🏆 ${myStats.points} pts (${myStats.exact} exactos, ${myStats.tendency} tendencias)` : '';
+    const myStats = calculatePoints(me.predictions, results, me.specialPredictions);
+    const specialText = myStats.specialCorrect > 0 ? `, ${myStats.specialCorrect} especiales` : '';
+    const pointsText = myStats.points > 0 ? ` · 🏆 ${myStats.points} pts (${myStats.exact} exactos, ${myStats.tendency} tendencias${specialText})` : '';
     subtitle.textContent = `Registrado: ${registeredAt}${updatedAt}${pointsText}`;
 
     // Agrupar predicciones por grupo
@@ -1736,8 +1737,80 @@ async function saveResults() {
     await init();
 }
 
-// Calcular puntos
-function calculatePoints(predictions, results) {
+// Normaliza nombre de equipo/jugador para comparar predicción especial vs resultado real
+function normalizeSpecialName(s) {
+    return stripFlag(s || '')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .trim()
+        .toLowerCase();
+}
+
+// Deriva campeón/subcampeón/tercer puesto desde los resultados reales de los partidos
+// 104 (Final) y 103 (Tercer puesto). El goleador se toma del líder de _topScorersCache,
+// calculado en renderTopScorers() desde los goles reales de ESPN.
+function getRealSpecialResults() {
+    const all = getAllMatchesWithTeams();
+    const finalMatch = all.find(m => m.id === 104);
+    const thirdMatch  = all.find(m => m.id === 103);
+    const finalResult = results.find(r => r.matchId === 104);
+    const thirdResult  = results.find(r => r.matchId === 103);
+
+    function winnerLoser(m, r) {
+        if (!m || !r || r.score1 == null || r.score2 == null) return { winner: null, loser: null };
+        if (r.penWinner === 1) return { winner: m.team1, loser: m.team2 };
+        if (r.penWinner === 2) return { winner: m.team2, loser: m.team1 };
+        if (r.score1 > r.score2) return { winner: m.team1, loser: m.team2 };
+        if (r.score1 < r.score2) return { winner: m.team2, loser: m.team1 };
+        return { winner: null, loser: null };
+    }
+
+    const { winner: champion, loser: runnerUp } = winnerLoser(finalMatch, finalResult);
+    const { winner: thirdPlace } = winnerLoser(thirdMatch, thirdResult);
+
+    // Goleador real = líder de la tabla calculada en renderTopScorers() desde goles de ESPN
+    const topScorer = _topScorersCache?.[0]?.name || null;
+
+    return { champion, runnerUp, thirdPlace, topScorer };
+}
+
+// Nombres de equipo: igualdad exacta (misma fuente interna en ambos lados).
+function teamPredictionMatches(pred, real) {
+    if (!pred || !real) return false;
+    return normalizeSpecialName(pred) === normalizeSpecialName(real);
+}
+
+// Goleador: el real viene como nombre completo (ESPN) y el pick puede ser solo el
+// apellido, así que se acepta que uno contenga al otro.
+function scorerPredictionMatches(pred, real) {
+    if (!pred || !real) return false;
+    const p = normalizeSpecialName(pred);
+    const r = normalizeSpecialName(real);
+    if (!p || !r) return false;
+    return p === r || p.includes(r) || r.includes(p);
+}
+
+// +5 pts por cada predicción especial acertada (campeón, subcampeón, tercer puesto, goleador)
+function calculateSpecialPoints(specialPredictions, real) {
+    let specialPoints = 0;
+    let specialCorrect = 0;
+    if (specialPredictions && real) {
+        [
+            [specialPredictions.champion, real.champion, teamPredictionMatches],
+            [specialPredictions.runnerUp, real.runnerUp, teamPredictionMatches],
+            [specialPredictions.thirdPlace, real.thirdPlace, teamPredictionMatches],
+            [specialPredictions.topScorer, real.topScorer, scorerPredictionMatches],
+        ].forEach(([pred, r, matches]) => {
+            if (matches(pred, r)) {
+                specialPoints += 5;
+                specialCorrect++;
+            }
+        });
+    }
+    return { specialPoints, specialCorrect };
+}
+
+// Calcular puntos (marcadores + especiales)
+function calculatePoints(predictions, results, specialPredictions, realSpecial) {
     let points = 0;
     let exact = 0;
     let tendency = 0;
@@ -1755,7 +1828,7 @@ function calculatePoints(predictions, results) {
         else {
             const predOutcome = Math.sign(pred.score1 - pred.score2);
             const resultOutcome = Math.sign(result.score1 - result.score2);
-            
+
             if (predOutcome === resultOutcome) {
                 points += 1;
                 tendency++;
@@ -1763,7 +1836,10 @@ function calculatePoints(predictions, results) {
         }
     });
 
-    return { points, exact, tendency };
+    const real = realSpecial || getRealSpecialResults();
+    const { specialPoints, specialCorrect } = calculateSpecialPoints(specialPredictions, real);
+
+    return { points: points + specialPoints, exact, tendency, specialPoints, specialCorrect };
 }
 
 // Tabla de grupos — calculada automáticamente desde results
@@ -2449,9 +2525,10 @@ function renderFinal()        { renderKnockoutRound(finalBracket,         'final
 
 // Actualizar tabla de posiciones
 function updateLeaderboard() {
+    const realSpecial = getRealSpecialResults();
     // Siempre mostrar todos los participantes, aunque no haya resultados
     const leaderboard = participants.map(p => {
-        const stats = calculatePoints(p.predictions, results);
+        const stats = calculatePoints(p.predictions, results, p.specialPredictions, realSpecial);
         return {
             name: p.name,
             ...stats
@@ -2476,9 +2553,6 @@ function updateLeaderboard() {
     }
 
     container.innerHTML = leaderboard.map((p, index) => {
-        const participant = participants.find(pt => pt.name === p.name);
-        const sp = participant?.specialPredictions || {};
-        const specialCount = [sp.champion, sp.runnerUp, sp.thirdPlace, sp.topScorer].filter(v => v && v.trim()).length;
         return `
         <div class="leaderboard-row">
             <span class="rank rank-${index + 1}">${index + 1}</span>
@@ -2486,7 +2560,7 @@ function updateLeaderboard() {
             <span class="points">${p.points}</span>
             <span>${p.exact}</span>
             <span>${p.tendency}</span>
-            <span style="color:#FFD700; font-weight:600;">${specialCount}/4</span>
+            <span style="color:#FFD700; font-weight:600;">${p.specialCorrect}/4</span>
         </div>`;
     }).join('');
 }
@@ -2512,20 +2586,31 @@ function renderAllPicks() {
     // Bloque de especiales: se muestra solo cuando ya cerró el plazo
     let specialsHtml = '';
     if (now >= SPECIAL_DEADLINE) {
+        const realSpecial = getRealSpecialResults();
         const specialRows = participants.map(p => {
             const sp = p.specialPredictions || {};
             const fields = [
-                { label: '🥇 Campeón',     value: sp.champion   },
-                { label: '🥈 Subcampeón',  value: sp.runnerUp   },
-                { label: '🥉 Tercer puesto', value: sp.thirdPlace },
-                { label: '⚽ Goleador',    value: sp.topScorer  },
+                { value: sp.champion,   real: realSpecial.champion,   matches: teamPredictionMatches },
+                { value: sp.runnerUp,   real: realSpecial.runnerUp,   matches: teamPredictionMatches },
+                { value: sp.thirdPlace, real: realSpecial.thirdPlace, matches: teamPredictionMatches },
+                { value: sp.topScorer,  real: realSpecial.topScorer,  matches: scorerPredictionMatches },
             ];
-            const cells = fields.map(f =>
-                `<td style="padding:8px 10px;text-align:center;font-size:0.85rem;">${f.value && f.value.trim() ? f.value : '<span style="color:var(--text-dim);">—</span>'}</td>`
-            ).join('');
+            const cells = fields.map(f => {
+                const isCorrect = f.matches(f.value, f.real);
+                const style = isCorrect
+                    ? 'padding:8px 10px;text-align:center;font-size:0.85rem;color:#00FF88;font-weight:600;'
+                    : 'padding:8px 10px;text-align:center;font-size:0.85rem;';
+                const text = f.value && f.value.trim() ? f.value : '<span style="color:var(--text-dim);">—</span>';
+                return `<td style="${style}">${text}${isCorrect ? ' ✓' : ''}</td>`;
+            }).join('');
+            const { specialPoints } = calculateSpecialPoints(sp, realSpecial);
+            const ptsStyle = specialPoints > 0
+                ? 'padding:8px 10px;text-align:center;font-size:0.85rem;color:#FFD700;font-weight:700;'
+                : 'padding:8px 10px;text-align:center;font-size:0.85rem;color:var(--text-dim);';
             return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
                 <td style="padding:8px 14px;">${p.name}</td>
                 ${cells}
+                <td style="${ptsStyle}">${specialPoints} pts</td>
             </tr>`;
         }).join('');
 
@@ -2536,13 +2621,14 @@ function renderAllPicks() {
                 <span style="margin-left:auto;color:var(--text-dim);font-size:0.8rem;">Plazo cerrado</span>
             </summary>
             <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;min-width:420px;">
+            <table style="width:100%;border-collapse:collapse;min-width:480px;">
                 <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08);color:var(--text-dim);font-size:0.82rem;">
                     <th style="padding:8px 14px;text-align:left;font-weight:500;">Participante</th>
                     <th style="padding:8px 10px;text-align:center;font-weight:500;">🥇 Campeón</th>
                     <th style="padding:8px 10px;text-align:center;font-weight:500;">🥈 Subcampeón</th>
                     <th style="padding:8px 10px;text-align:center;font-weight:500;">🥉 3er puesto</th>
                     <th style="padding:8px 10px;text-align:center;font-weight:500;">⚽ Goleador</th>
+                    <th style="padding:8px 10px;text-align:center;font-weight:500;">Puntos</th>
                 </tr></thead>
                 <tbody>${specialRows}</tbody>
             </table>
@@ -2705,6 +2791,7 @@ async function renderTopScorers() {
         if (!players.length) throw new Error('empty');
         _topScorersCache = players;
         _displayScorers(container, players);
+        updateLeaderboard(); // el goleador real recién quedó disponible para la polla especial
     } catch {
         container.innerHTML = `<p style="color:var(--text-dim);text-align:center;padding:16px;font-size:0.9rem;">No disponible por el momento.</p>`;
     }
@@ -2721,9 +2808,10 @@ function updateStats() {
     const username = sessionStorage.getItem('pollaUser');
     const displayName = localStorage.getItem(`pollaDisplayName:${username}`);
     const me = participants.find(p => p.name === displayName);
-    const myStats = me ? calculatePoints(me.predictions, results) : { points: 0, exact: 0, tendency: 0 };
+    const realSpecial = getRealSpecialResults();
+    const myStats = me ? calculatePoints(me.predictions, results, me.specialPredictions, realSpecial) : { points: 0, exact: 0, tendency: 0 };
 
-    const allScores = participants.map(p => calculatePoints(p.predictions, results).points);
+    const allScores = participants.map(p => calculatePoints(p.predictions, results, p.specialPredictions, realSpecial).points);
     const myRank = [...allScores].sort((a, b) => b - a).indexOf(myStats.points) + 1;
 
     document.getElementById('totalParticipants').textContent = participants.length;
@@ -2741,9 +2829,10 @@ function updateStats() {
 
 // Renderizar gráficos
 function renderCharts(myDisplayName) {
+    const realSpecial = getRealSpecialResults();
     const participantData = participants.map(p => ({
         name: p.name,
-        ...calculatePoints(p.predictions, results)
+        ...calculatePoints(p.predictions, results, p.specialPredictions, realSpecial)
     })).sort((a, b) => b.points - a.points);
 
     // Colores: resaltar al usuario actual
