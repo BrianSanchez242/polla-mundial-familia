@@ -83,6 +83,18 @@
         </div>
     </div>
 
+    <!-- Modal: Ganadores de la Polla -->
+    <div id="winnersModal" style="display:none; position:fixed; inset:0; background:rgba(10,14,39,0.92); z-index:9998; align-items:center; justify-content:center; padding:16px;">
+        <div style="background:var(--dark-2,#131929); border:1px solid rgba(255,215,0,0.4); border-radius:20px; padding:28px 24px; max-width:440px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 0 50px rgba(255,215,0,0.15); text-align:center;">
+            <h2 style="color:#FFD700; font-family:'Bebas Neue',sans-serif; font-size:1.8rem; margin:0 0 4px; letter-spacing:1px;">🏆 ¡Tenemos Ganadores!</h2>
+            <p style="color:#A0A8C0; font-size:0.85rem; margin:0 0 20px;">Pozo total: S/ 1,200 · 12 participantes</p>
+            <div id="winnersModalContent"></div>
+            <button onclick="closeWinnersModal()" style="width:100%; margin-top:20px; padding:12px; background:linear-gradient(135deg,#FFD700,#FFA500); border:none; border-radius:10px; color:#0A0E27; font-weight:700; font-size:0.95rem; cursor:pointer; letter-spacing:1px;">
+                ¡Felicidades! 🎉
+            </button>
+        </div>
+    </div>
+
     <!-- Botones de cabecera (logout, cambiar pwd, admin usuarios) -->
     <div id="headerBtns" style="display:none; position:fixed; top:14px; right:14px; z-index:1000; display:none; gap:8px; align-items:center;">
         <!-- Desktop: botones individuales -->
@@ -507,7 +519,12 @@
         <!-- TAB: TABLA DE POSICIONES -->
         <div id="leaderboard" class="tab-content">
             <div class="card">
-                <h2 class="card-title">Tabla de Posiciones</h2>
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                    <h2 class="card-title" style="margin:0;">Tabla de Posiciones</h2>
+                    <button id="viewWinnersBtn" onclick="showWinnersModal()" style="display:none; background:rgba(255,215,0,0.12); border:1px solid rgba(255,215,0,0.4); color:#FFD700; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600;">
+                        🏆 Ver Ganadores
+                    </button>
+                </div>
                 <div class="leaderboard">
                     <div class="leaderboard-header">
                         <span>Pos</span>

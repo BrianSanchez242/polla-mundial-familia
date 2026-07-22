@@ -686,6 +686,7 @@ let _livePollingInterval = null;
 let _topScorersCache = null;
 let _topScorersExpanded = false;
 let _confettiShown = false;
+let _winnersModalShown = false;
 
 const ESPN_TO_ES = {
     'Mexico': 'México', 'South Africa': 'Sudáfrica',
@@ -1016,6 +1017,10 @@ const SPECIAL_DEADLINE = new Date('2026-06-22T00:00:00-05:00');
 function isSpecialDeadlinePassed() {
     return new Date() >= SPECIAL_DEADLINE;
 }
+
+// Premio de la polla: 1er puesto 80%, 2do puesto 20% de S/1,200
+const POLLA_TOTAL_SOLES = 1200;
+const PRIZE_SPLIT = [0.8, 0.2];
 
 function toggleSpecialPredictions() {
     const body  = document.getElementById('specialPredictionsBody');
@@ -2524,22 +2529,67 @@ function renderSemiFinals()   { renderKnockoutRound(semiFinalsBracket,    'semiF
 function renderThirdPlace()   { renderKnockoutRound(thirdPlaceBracket,    'thirdPlaceContainer'); }
 function renderFinal()        { renderKnockoutRound(finalBracket,         'finalContainer'); }
 
-// Actualizar tabla de posiciones
-function updateLeaderboard() {
-    const realSpecial = getRealSpecialResults();
-    // Siempre mostrar todos los participantes, aunque no haya resultados
-    const leaderboard = participants.map(p => {
-        const stats = calculatePoints(p.predictions, results, p.specialPredictions, realSpecial);
-        return {
-            name: p.name,
-            ...stats
-        };
-    }).sort((a, b) => {
-        // Ordenar por puntos, luego por exactos, luego por tendencia
+// Ordena participantes por puntos (igual criterio que la Tabla de Posiciones)
+function getLeaderboardSorted(realSpecial) {
+    return participants.map(p => ({
+        name: p.name,
+        ...calculatePoints(p.predictions, results, p.specialPredictions, realSpecial)
+    })).sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points;
         if (b.exact !== a.exact) return b.exact - a.exact;
         return b.tendency - a.tendency;
     });
+}
+
+// Ganadores + monto de premio. Solo tiene sentido una vez que campeón y
+// subcampeón están definidos (es decir, ya se jugó la Final).
+function getPollaWinners() {
+    const realSpecial = getRealSpecialResults();
+    if (!realSpecial.champion || !realSpecial.runnerUp) return [];
+
+    return getLeaderboardSorted(realSpecial).slice(0, 2).map((p, i) => ({
+        ...p,
+        prize: Math.round(POLLA_TOTAL_SOLES * PRIZE_SPLIT[i]),
+        pct: Math.round(PRIZE_SPLIT[i] * 100)
+    }));
+}
+
+function showWinnersModal() {
+    const winners = getPollaWinners();
+    if (winners.length < 2) return;
+
+    const modal = document.getElementById('winnersModal');
+    const content = document.getElementById('winnersModalContent');
+    if (!modal || !content) return;
+
+    const medals = ['🥇', '🥈'];
+    content.innerHTML = winners.map((w, i) => `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; background:rgba(255,215,0,${i === 0 ? '0.1' : '0.05'}); border:1px solid rgba(255,215,0,${i === 0 ? '0.35' : '0.2'}); border-radius:14px; padding:16px 18px; margin-bottom:12px;">
+            <div style="text-align:left;">
+                <div style="font-size:1.4rem;">${medals[i]} ${w.name}</div>
+                <div style="color:#A0A8C0; font-size:0.82rem; margin-top:2px;">${w.points} pts (${w.exact} exactos, ${w.tendency} tendencias)</div>
+            </div>
+            <div style="text-align:right; white-space:nowrap;">
+                <div style="color:#FFD700; font-weight:700; font-size:1.15rem;">S/ ${w.prize}</div>
+                <div style="color:#A0A8C0; font-size:0.78rem;">${w.pct}%</div>
+            </div>
+        </div>`).join('');
+
+    modal.style.display = 'flex';
+}
+
+function closeWinnersModal() {
+    const modal = document.getElementById('winnersModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Actualizar tabla de posiciones
+function updateLeaderboard() {
+    const realSpecial = getRealSpecialResults();
+    const leaderboard = getLeaderboardSorted(realSpecial);
+
+    const winnersBtn = document.getElementById('viewWinnersBtn');
+    if (winnersBtn) winnersBtn.style.display = (realSpecial.champion && realSpecial.runnerUp) ? 'block' : 'none';
 
     const container = document.getElementById('leaderboardBody');
     
@@ -2949,6 +2999,10 @@ function switchTab(tabName) {
     if (tabName === 'leaderboard' && !_confettiShown) {
         _confettiShown = true;
         launchConfetti();
+        if (!_winnersModalShown && getPollaWinners().length === 2) {
+            _winnersModalShown = true;
+            setTimeout(showWinnersModal, 700);
+        }
     }
 
     const stickyWrapper = document.getElementById('saveBtnStickyWrapper');
